@@ -176,6 +176,37 @@ Server verified running: `GET /health` returns `{"status": "ok"}`. Swagger docs 
 | `GET` | `/api/v1/complaints/{id}` | Any authenticated | Get complaint detail |
 | `PATCH` | `/api/v1/complaints/{id}/status` | Committee / Admin | Update status |
 
+---
+
+## Session 1 — Deferred Discussion: Society Registration UI
+
+**Question raised:** "When will I be able to add a society from the app?"
+
+**Current state:**
+- Backend endpoint already exists: `POST /api/v1/auth/society/register` (built in Phase 2)
+- Testable **right now** via Swagger at `http://localhost:8000/docs`
+- No Flutter UI screen for society registration exists yet — master plan did not include one
+- Data cannot be saved until PostgreSQL is running
+
+**Two options discussed — decision deferred to next session:**
+
+| Option | Description |
+|--------|-------------|
+| **A** | Keep it as-is — admin onboards society via Swagger, shares UUID with residents. Matches real SaaS behaviour. |
+| **B** | Add a Society Registration screen to Flutter (outside original plan): Register Society → Get UUID → Register User → Login |
+
+**To set up PostgreSQL (needed before any live data can be saved):**
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+createdb society_db
+cd backend && alembic upgrade head
+```
+
+**Action for next session:** Decide Option A or B, then continue to **Phase 5 — Visitor & Security Management**.
+
+---
+
 ### Next Phase: Phase 5 — Visitor & Security Management (Full-Stack)
 
 ---
