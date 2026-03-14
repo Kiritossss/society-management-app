@@ -6,6 +6,8 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/complaints/screens/complaints_list_screen.dart';
+import 'features/complaints/screens/create_complaint_screen.dart';
 import 'shared/screens/dashboard_placeholder_screen.dart';
 
 void main() {
@@ -40,6 +42,14 @@ class SocietyApp extends ConsumerWidget {
         GoRoute(
           path: '/dashboard',
           builder: (_, __) => const DashboardPlaceholderScreen(),
+        ),
+        GoRoute(
+          path: '/complaints',
+          builder: (_, __) => const ComplaintsListScreen(),
+        ),
+        GoRoute(
+          path: '/complaints/new',
+          builder: (_, __) => const CreateComplaintScreen(),
         ),
       ],
     );

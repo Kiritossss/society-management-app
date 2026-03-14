@@ -134,7 +134,49 @@ Server verified running: `GET /health` returns `{"status": "ok"}`. Swagger docs 
 - **`AuthNotifier` checks saved token on startup** — seamless auto-login if token exists
 - **`flutter analyze` passes with zero issues** after fixing deprecated `withOpacity` → `withValues(alpha:)`
 
-### Next Phase: Phase 4 — Complaint Management (Full-Stack)
+---
+
+## Session 1 (continued) — Phase 4: Complaint Management (Full-Stack)
+
+**Objective:** Build complaint tracking end-to-end — backend model, API, and Flutter UI.
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/models/complaint.py` | Created | `Complaint` ORM model; `ComplaintCategory` enum (maintenance/noise/cleanliness/security/other); `ComplaintStatus` enum (open/in_progress/resolved/closed) |
+| `backend/app/db/base.py` | Modified | Registered `Complaint` model for Alembic autogenerate |
+| `backend/migrations/versions/fe54b529790e_create_complaints_table.py` | Created | Migration: creates `complaints` table with FKs to `societies` and `users` |
+| `backend/app/schemas/complaint.py` | Created | `ComplaintCreate` (with validators), `ComplaintStatusUpdate`, `ComplaintResponse` |
+| `backend/app/crud/crud_complaint.py` | Created | `create_complaint`, `get_complaints` (RBAC-aware), `get_complaint_by_id`, `update_complaint_status` |
+| `backend/app/api/v1/endpoints/complaints.py` | Created | `POST /complaints/`, `GET /complaints/`, `GET /complaints/{id}`, `PATCH /complaints/{id}/status` |
+| `backend/app/api/v1/__init__.py` | Modified | Mounted `complaints.router` |
+| `frontend/lib/shared/models/complaint_model.dart` | Created | `ComplaintModel`, `ComplaintCategory`, `ComplaintStatus` constants |
+| `frontend/lib/features/complaints/services/complaint_service.dart` | Created | Dio calls: list, get, create, update status |
+| `frontend/lib/features/complaints/providers/complaint_provider.dart` | Created | `ComplaintState` + `ComplaintNotifier` (Riverpod); load, create, update status |
+| `frontend/lib/features/complaints/screens/complaints_list_screen.dart` | Created | List view with status badges, category chips, pull-to-refresh, empty state |
+| `frontend/lib/features/complaints/screens/create_complaint_screen.dart` | Created | Create form: category dropdown, title, description, image URL stub |
+| `frontend/lib/main.dart` | Modified | Added `/complaints` and `/complaints/new` routes |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Modified | Full module grid — Complaints tile is live; others shown as locked (coming soon) |
+
+### Key Design Decisions
+
+- **RBAC on list endpoint**: `Member` sees only own complaints; `Committee`/`Admin` see all — enforced in CRUD, not just frontend
+- **Member access guard on detail endpoint**: `403` if member tries to access another user's complaint by ID
+- **`resolved_at` timestamp** set automatically when status → `resolved`
+- **Image URL stub** included in create form — full upload integration planned for later phase
+- **`flutter analyze` — zero issues**
+
+### API Endpoints (Phase 4)
+
+| Method | Path | Access | Description |
+|--------|------|--------|-------------|
+| `POST` | `/api/v1/complaints/` | Any authenticated | Raise a new complaint |
+| `GET` | `/api/v1/complaints/` | Any authenticated | List complaints (RBAC-filtered) |
+| `GET` | `/api/v1/complaints/{id}` | Any authenticated | Get complaint detail |
+| `PATCH` | `/api/v1/complaints/{id}/status` | Committee / Admin | Update status |
+
+### Next Phase: Phase 5 — Visitor & Security Management (Full-Stack)
 
 ---
 
