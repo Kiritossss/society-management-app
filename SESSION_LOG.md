@@ -101,13 +101,40 @@ Server verified running: `GET /health` returns `{"status": "ok"}`. Swagger docs 
 
 ---
 
-### Phase 3 — Next Session: Flutter App Foundation
+---
 
-**Planned work:**
-1. Configure `pubspec.yaml` with packages (Riverpod, Dio, GoRouter)
-2. Create core theme and constants (`frontend/lib/core/`)
-3. Set up Dio HTTP client with JWT interceptor
-4. Build Login & Registration screens (`frontend/lib/features/auth/`)
+## Session 1 (continued) — Phase 3: Flutter App Foundation
+
+**Objective:** Setup the mobile app shell — theme, networking, auth screens.
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `frontend/pubspec.yaml` | Created | Dependencies: flutter_riverpod, go_router, dio, flutter_secure_storage, shared_preferences |
+| `frontend/lib/core/theme/app_colors.dart` | Created | Full color palette — primary, accent, semantic, role badge colors |
+| `frontend/lib/core/theme/app_theme.dart` | Created | Material 3 `ThemeData` — AppBar, inputs, buttons, cards |
+| `frontend/lib/core/constants/api_constants.dart` | Created | Base URL, versioned API endpoint paths, timeouts |
+| `frontend/lib/core/constants/app_constants.dart` | Created | App name, secure storage key names |
+| `frontend/lib/core/network/api_client.dart` | Created | Singleton Dio instance; `_AuthInterceptor` auto-attaches JWT `Bearer` header |
+| `frontend/lib/shared/models/user_model.dart` | Created | `UserModel` with `fromJson` / `toJson` |
+| `frontend/lib/shared/models/auth_token_model.dart` | Created | `AuthTokenModel` wrapping `UserModel` + token string |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Created | Post-login landing screen showing user name + role badge |
+| `frontend/lib/features/auth/services/auth_service.dart` | Created | `login`, `register`, `logout`, `isLoggedIn` — persists session to secure storage |
+| `frontend/lib/features/auth/providers/auth_provider.dart` | Created | `AuthState` + `AuthNotifier` (Riverpod `StateNotifier`); auto-checks saved session on startup |
+| `frontend/lib/features/auth/screens/login_screen.dart` | Created | Login UI — society ID, email, password fields; error snackbar; navigate to register |
+| `frontend/lib/features/auth/screens/register_screen.dart` | Created | Register UI — society ID, name, email, password + confirm; auto-login on success |
+| `frontend/lib/main.dart` | Created | `ProviderScope` root, GoRouter with auth redirect guards, routes: `/login`, `/register`, `/dashboard` |
+
+### Key Design Decisions
+
+- **JWT stored in `flutter_secure_storage`** (encrypted keychain/keystore) — not SharedPreferences
+- **`society_id` persisted to secure storage** so it's auto-attached to all subsequent API calls
+- **GoRouter redirect guards** — unauthenticated users bounce to `/login`; authenticated users bypass auth routes
+- **`AuthNotifier` checks saved token on startup** — seamless auto-login if token exists
+- **`flutter analyze` passes with zero issues** after fixing deprecated `withOpacity` → `withValues(alpha:)`
+
+### Next Phase: Phase 4 — Complaint Management (Full-Stack)
 
 ---
 
