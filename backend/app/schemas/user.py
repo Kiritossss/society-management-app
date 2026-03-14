@@ -1,0 +1,50 @@
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, EmailStr, field_validator
+
+from app.models.user import UserRole
+
+
+class UserRegister(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.MEMBER
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+    @field_validator("full_name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Full name cannot be blank")
+        return v.strip()
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    society_id: uuid.UUID
+    email: EmailStr
+    full_name: str
+    role: UserRole
+    is_active: bool
+    created_at: datetime
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

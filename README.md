@@ -112,7 +112,7 @@ flutter run
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Database & Core Setup (models, Alembic) | ✅ Complete |
-| 2 | Authentication & Multi-Tenancy (JWT, RBAC) | 🔄 In Progress |
+| 2 | Authentication & Multi-Tenancy (JWT, RBAC) | ✅ Complete |
 | 3 | Flutter App Foundation | ⏳ Pending |
 | 4 | Complaint Management (full-stack) | ⏳ Pending |
 | 5 | Visitor & Security Management (full-stack) | ⏳ Pending |

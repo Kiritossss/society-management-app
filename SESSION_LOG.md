@@ -44,13 +44,53 @@ This file tracks everything done across all development sessions. Update it at t
 
 ---
 
-### Phase 2 — Next Session: Authentication & Multi-Tenancy
+---
+
+## Session 1 (continued) — Phase 2: Authentication & Multi-Tenancy
+
+**Objective:** Build secure login and role-based access control.
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/core/security.py` | Created | `hash_password`, `verify_password` (bcrypt), `create_access_token`, `decode_access_token` (JWT via `python-jose`) |
+| `backend/app/schemas/society.py` | Created | `SocietyCreate`, `SocietyResponse` Pydantic schemas |
+| `backend/app/schemas/user.py` | Created | `UserRegister` (with password strength + name validators), `UserLogin`, `UserResponse`, `TokenResponse` |
+| `backend/app/schemas/__init__.py` | Created | Re-exports all schemas |
+| `backend/app/crud/crud_user.py` | Created | `get_user_by_email`, `get_user_by_id`, `create_user`, `authenticate_user` — all scoped by `society_id` |
+| `backend/app/crud/crud_society.py` | Created | `get_society_by_email`, `get_society_by_id`, `create_society` |
+| `backend/app/crud/__init__.py` | Created | Re-exports all CRUD functions |
+| `backend/app/api/dependencies.py` | Created | `get_current_user` (JWT decode + DB lookup), `require_roles()` factory, pre-built guards: `require_admin`, `require_committee`, `require_support_staff`, `require_member` |
+| `backend/app/api/v1/__init__.py` | Created | `api_router` aggregating all v1 sub-routers |
+| `backend/app/api/v1/endpoints/auth.py` | Created | `POST /api/v1/auth/society/register`, `POST /api/v1/auth/register`, `POST /api/v1/auth/login` |
+| `backend/app/main.py` | Modified | Mounted `api_router` onto the FastAPI app |
+
+### Key Design Decisions
+
+- **JWT payload** carries `sub` (user UUID), `society_id`, and `role` — all three extracted and validated in `get_current_user`
+- **All CRUD queries filter by `society_id`** — no cross-tenant data leakage possible
+- **`require_roles()` is a factory** returning a FastAPI dependency; roles are additive (admin inherits all lower permissions)
+- **Society registration is separate** from user registration — a society must exist before users can join it
+- **Email uniqueness is per-society**, not global (`UNIQUE(society_id, email)`) — consistent with the migration constraint
+
+### API Endpoints (Phase 2)
+
+| Method | Path | Access | Description |
+|--------|------|--------|-------------|
+| `POST` | `/api/v1/auth/society/register` | Public | Onboard a new society |
+| `POST` | `/api/v1/auth/register?society_id=...` | Public | Register a user within a society |
+| `POST` | `/api/v1/auth/login?society_id=...` | Public | Login — returns JWT token |
+
+---
+
+### Phase 3 — Next Session: Flutter App Foundation
 
 **Planned work:**
-1. Pydantic schemas for `User` and `Society` (create, login, response) → `backend/app/schemas/`
-2. Auth dependency → `backend/app/api/dependencies.py` (JWT verify + role check + `society_id` extraction)
-3. Auth endpoints → `backend/app/api/v1/endpoints/auth.py` (register, login, refresh)
-4. `backend/app/core/security.py` (password hashing with bcrypt, JWT encode/decode)
+1. Configure `pubspec.yaml` with packages (Riverpod, Dio, GoRouter)
+2. Create core theme and constants (`frontend/lib/core/`)
+3. Set up Dio HTTP client with JWT interceptor
+4. Build Login & Registration screens (`frontend/lib/features/auth/`)
 
 ---
 

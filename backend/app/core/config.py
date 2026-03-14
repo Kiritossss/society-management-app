@@ -9,11 +9,11 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/society_db"
+    # Database — must be set in .env
+    DATABASE_URL: str
 
-    # JWT
-    SECRET_KEY: str = "change-me-in-production-use-a-long-random-string"
+    # JWT — must be set in .env (use: openssl rand -hex 32)
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
