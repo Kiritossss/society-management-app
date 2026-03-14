@@ -84,6 +84,23 @@ This file tracks everything done across all development sessions. Update it at t
 
 ---
 
+### Bug Fix: Circular Import (discovered during startup check)
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/db/base_class.py` | Created | Contains only `DeclarativeBase` — the single source of `Base` for all models |
+| `backend/app/db/base.py` | Modified | Now only used by Alembic: imports `Base` from `base_class` + all models |
+| `backend/app/models/society.py` | Modified | Changed `Base` import to `app.db.base_class` |
+| `backend/app/models/user.py` | Modified | Changed `Base` import to `app.db.base_class` |
+
+**Root cause:** `db/base.py` imported models, models imported `Base` from `db/base.py` → circular import at startup.
+
+**Fix:** `Base` class lives in `db/base_class.py`; models import from there. `db/base.py` is Alembic-only.
+
+Server verified running: `GET /health` returns `{"status": "ok"}`. Swagger docs accessible at `http://localhost:8000/docs`.
+
+---
+
 ### Phase 3 — Next Session: Flutter App Foundation
 
 **Planned work:**
