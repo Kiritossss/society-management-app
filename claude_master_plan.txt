@@ -1,0 +1,59 @@
+# Society Management App - Master Step-by-Step Development Plan
+
+This guide is designed to be fed into Claude (or any AI) session-by-session to build the application efficiently without exceeding token context windows. 
+
+**Instructions for the AI:** 
+- Only execute ONE phase at a time. Do not attempt to build the whole app in one prompt.
+- At the start of a phase, read this file, along with `/Users/masum/Development/Society/rules.md`.
+
+---
+
+## Phase 1: Database & Core Setup (Backend)
+**Objective**: Establish the foundation of the FastAPI backend and database.
+1. Write the SQLAlchemy Base setup (`backend/app/db/base.py`, `backend/app/db/session.py`).
+2. Write the database models for `Society` and `User` (`backend/app/models/society.py`, `backend/app/models/user.py`). 
+    - Ensure strict multi-tenancy rules (`society_id` on Users).
+3. Set up Alembic and generate the first migration schema.
+
+## Phase 2: Authentication & Multi-Tenancy (Backend)
+**Objective**: Build secure login and role-based access.
+1. Write Pydantic schemas for `User` and `Society` creation & login (`backend/app/schemas/`).
+2. Write the authentication dependency (`backend/app/api/dependencies.py`) to verify JWTs, user roles, and extract `society_id` securely.
+3. Create the auth endpoints (`backend/app/api/v1/endpoints/auth.py`).
+
+## Phase 3: Flutter App Foundation (Frontend)
+**Objective**: Setup the mobile app shell.
+1. Configure `pubspec.yaml` with required packages (Riverpod/Provider, Dio/HTTP, GoRouter).
+2. Create the core theme and constants (`frontend/lib/core/`).
+3. Set up the API networking client (Dio) with an interceptor to automatically attach JWT tokens.
+4. Build the Login & Registration screens (`frontend/lib/features/auth/`).
+
+## Phase 4: Core Feature 1 - Complaint Management
+*Note: We develop features full-stack, module by module.*
+1. **Backend**: 
+    - Create `Complaint` model, schemas, and CRUD operations.
+    - Build FastAPI endpoints (`backend/app/api/v1/endpoints/complaints.py`).
+2. **Frontend**: 
+    - Build Flutter UI to list complaints.
+    - Build Flutter UI to create a new complaint (with image upload snippet).
+    - Connect Flutter UI to the backend endpoints.
+
+## Phase 5: Core Feature 2 - Visitor & Security Management
+1. **Backend**: 
+    - Create `VisitorLog` model, schemas, and CRUD.
+    - Build endpoints ensuring only `Support Staff` (watchmen) can create entries.
+2. **Frontend**:
+    - Build Watchman Dashboard UI to log entry/exit.
+    - Build Resident UI to approve/deny entry.
+
+## Phase 6: Core Feature 3 - Maintenance & Payments
+1. **Backend**:
+    - Create `Bill` and `Payment` models.
+    - Build billing endpoints to auto-generate society dues.
+2. **Frontend**:
+    - Build Billing Dashboard UI for residents to view dues.
+    - Integrate payment gateway (e.g., Stripe) stub on Flutter.
+
+## Phase 7: Polish & Push Notifications
+1. **Backend**: Setup Firebase Admin SDK in FastAPI to send FCM push messages on events (e.g., new visitor, new complaint).
+2. **Frontend**: Integrate Firebase Cloud Messaging package in Flutter to receive pushes and navigate to the relevant screen.
