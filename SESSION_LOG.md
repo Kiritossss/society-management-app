@@ -207,6 +207,51 @@ cd backend && alembic upgrade head
 
 ---
 
+---
+
+## Session 2 — 2026-03-15
+
+### What We Did This Session
+
+1. **Confirmed Phase 4 complete** — Complaint Management backend + Flutter UI is fully built.
+2. **Added full setup guide to `claude_master_plan.txt`** — one-time PostgreSQL setup, `.env` creation, `alembic upgrade head`, server start command.
+3. **Added full login walkthrough to `claude_master_plan.txt`** — step-by-step: create society via Swagger → get UUID → register user → login → authorize in Swagger → login from Flutter app.
+4. **Added progress table** to master plan showing Phases 1–4 done, Phase 5 next.
+5. Committed and pushed to GitHub.
+
+### Files Modified This Session
+
+| File | Action | Description |
+|------|--------|-------------|
+| `claude_master_plan.txt` | Modified | Added one-time setup guide, full login walkthrough, progress table, deferred decisions |
+
+---
+
+### 🚀 Start of Next Session — Pick Up Here
+
+**Before doing anything else:**
+
+1. Start PostgreSQL:
+   ```bash
+   brew services start postgresql@16
+   ```
+2. Verify `.env` exists at `backend/.env` (see master plan Step 2 if not).
+3. Run migrations (only needed once, or after a new migration):
+   ```bash
+   cd /Users/masum/Development/Society/backend
+   alembic upgrade head
+   ```
+4. Start the backend server:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+5. Open Swagger at `http://localhost:8000/docs` and follow the **"How to Create a Society & Test the Full Login Flow"** steps in `claude_master_plan.txt` to create a society UUID and log in.
+
+**Then continue with:**
+> **Phase 5 — Visitor & Security Management (Full-Stack)**
+
+---
+
 ### Next Phase: Phase 5 — Visitor & Security Management (Full-Stack)
 
 ---
