@@ -2,11 +2,121 @@
 
 This guide is designed to be fed into Claude (or any AI) session-by-session to build the application efficiently without exceeding token context windows. 
 
-**Instructions for the AI:** 
+**Instructions for the AI:**
 - Only execute ONE phase at a time. Do not attempt to build the whole app in one prompt.
 - At the start of a phase, read this file, along with `/Users/masum/Development/Society/rules.md`.
 
 ---
+
+## ⚙️ One-Time Setup (Do This Before Testing Anything)
+
+### Step 1 — Start PostgreSQL
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+createdb society_db
+```
+
+### Step 2 — Create the .env file
+File location: `backend/.env`
+Copy from `backend/.env.example` and fill in:
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/society_db
+SECRET_KEY=<run: openssl rand -hex 32>
+DEBUG=True
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+RATE_LIMIT_PER_MINUTE=60
+```
+
+### Step 3 — Run database migrations
+```bash
+cd /Users/masum/Development/Society/backend
+alembic upgrade head
+```
+
+### Step 4 — Start the backend server
+```bash
+cd /Users/masum/Development/Society/backend
+uvicorn app.main:app --reload --port 8000
+```
+API docs available at: http://localhost:8000/docs
+
+---
+
+## 🧪 How to Create a Society & Test the Full Login Flow
+
+> Do all of this via Swagger UI at http://localhost:8000/docs
+
+### Step 1 — Register a Society
+- Open: `POST /api/v1/auth/society/register`
+- Click "Try it out" → fill in the body:
+```json
+{
+  "name": "Green Valley Society",
+  "address": "123 Main Street, City",
+  "contact_email": "admin@greenvalley.com"
+}
+```
+- Click Execute.
+- **Copy the `id` field from the response** — this is your `society_id` (UUID).
+- Example: `"id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"`
+
+### Step 2 — Register a User (Admin)
+- Open: `POST /api/v1/auth/register`
+- Add query param `society_id` = the UUID you copied above
+- Body:
+```json
+{
+  "full_name": "Your Name",
+  "email": "you@example.com",
+  "password": "yourpassword123",
+  "role": "admin"
+}
+```
+- Click Execute. User is created.
+
+### Step 3 — Login
+- Open: `POST /api/v1/auth/login`
+- Add query param `society_id` = the UUID
+- Body:
+```json
+{
+  "email": "you@example.com",
+  "password": "yourpassword123"
+}
+```
+- Copy the `access_token` from the response.
+
+### Step 4 — Authorise in Swagger (to test protected endpoints)
+- Click the green **"Authorize"** button at the top of the Swagger page
+- Paste your token in the `Bearer` field → click Authorize
+- Now all protected endpoints (complaints, etc.) will work
+
+### Step 5 — Login from the Flutter App
+- Run the Flutter app: `cd frontend && flutter run -d chrome --web-port 3000`
+- Enter the `society_id` UUID, your email, and password on the Login screen
+- You will land on the Dashboard and can navigate to Complaints
+
+---
+
+## 📊 Current Progress
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Database & Core Setup | ✅ Done |
+| 2 | Authentication & Multi-Tenancy | ✅ Done |
+| 3 | Flutter App Foundation | ✅ Done |
+| 4 | Complaint Management (full-stack) | ✅ Done |
+| 5 | Visitor & Security Management | ⏳ Next |
+| 6 | Maintenance & Payments | ⏳ Pending |
+| 7 | Push Notifications | ⏳ Pending |
+
+## 🔖 Deferred Decisions
+- **Society Registration UI in Flutter**: Decided to keep onboarding via Swagger for now (Option A).
+  Option B (Flutter screen) can be added later. See SESSION_LOG.md for details.
+
+---
+
 
 ## Phase 1: Database & Core Setup (Backend)
 **Objective**: Establish the foundation of the FastAPI backend and database.
