@@ -12,6 +12,18 @@ class ComplaintCreate(BaseModel):
     category: ComplaintCategory = ComplaintCategory.OTHER
     image_url: str | None = None
 
+    @field_validator("image_url")
+    @classmethod
+    def validate_image_url(cls, v: str | None) -> str | None:
+        if v is None or not v.strip():
+            return None
+        v = v.strip()
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("Image URL must start with http:// or https://")
+        if len(v) > 500:
+            raise ValueError("Image URL must be 500 characters or fewer")
+        return v
+
     @field_validator("title")
     @classmethod
     def title_not_empty(cls, v: str) -> str:

@@ -227,6 +227,135 @@ cd backend && alembic upgrade head
 
 ---
 
+---
+
+---
+
+## Session 3 — 2026-03-15
+
+### What We Did This Session
+
+**Code Audit & Bug Fixes + Unit/Member Management (Full-Stack)**
+
+Performed a full code audit across backend and frontend, fixed critical security bugs, and built the Unit + Member management system — the structural foundation for all future features.
+
+---
+
+### Part 1: Bug Fixes (from audit)
+
+| # | Issue | Fix | File |
+|---|-------|-----|------|
+| 1 | Users could self-assign `admin` role at registration | Removed `role` from `UserRegister` schema; hardcoded `MEMBER` in `create_user()` | `schemas/user.py`, `crud/crud_user.py` |
+| 2 | Pagination had no bounds (`limit=999999` allowed) | Added `Query(ge=0)` / `Query(ge=1, le=100)` | `endpoints/complaints.py` |
+| 3 | `image_url` accepted any string (SSRF/XSS risk) | Added `field_validator` checking `http(s)://` prefix + 500 char limit | `schemas/complaint.py` |
+| 4 | Flutter auth interceptor `void` + `async` mismatch | Changed `_AuthInterceptor` to extend `QueuedInterceptor` | `api_client.dart` |
+
+---
+
+### Part 2: Unit Model — Society Layout Structure
+
+**New model: `Unit`** — flexible enough for any society layout (towers, blocks, row houses, or simple flat numbering).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| society_id | UUID FK | Multi-tenant isolation |
+| block_name | String | Nullable — "Tower A", "Block B" |
+| floor_number | String | Nullable — "G", "1", "Mezzanine" |
+| unit_number | String | Required — "301", "A-101", "House 5" |
+| unit_type | String | Nullable — "1BHK", "2BHK", "Shop" |
+| area_sqft | Float | Nullable — for future billing |
+| is_occupied | Boolean | Default false, auto-updated on member assignment |
+
+- Unique index: `(society_id, COALESCE(block_name, ''), COALESCE(floor_number, ''), unit_number)` — handles NULLs correctly
+- `User.unit_id` FK added (nullable, `SET NULL` on delete) — links members to units
+- `Society.units` relationship added
+
+---
+
+### Part 3: New Backend Endpoints
+
+#### Unit Management (Admin-only)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/units/` | Create single unit |
+| POST | `/api/v1/units/bulk` | Create up to 200 units at once |
+| GET | `/api/v1/units/` | List units (paginated) |
+| GET | `/api/v1/units/{id}` | Get unit detail |
+| PATCH | `/api/v1/units/{id}` | Update unit metadata |
+| DELETE | `/api/v1/units/{id}` | Delete (rejected if occupied) |
+
+#### Member Management (Admin-only)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/members/` | Create user with role + unit assignment |
+| GET | `/api/v1/members/` | List all society members |
+| PATCH | `/api/v1/members/{id}/unit` | Assign/reassign unit |
+| PATCH | `/api/v1/members/{id}/deactivate` | Deactivate member |
+
+---
+
+### Part 4: Frontend (Flutter)
+
+- **`UnitModel`** — with `displayLabel` getter ("Tower A / Floor 3 / 301")
+- **`UserModel`** — added `unitId` field
+- **Unit feature** — service, provider, list screen (with delete), create screen
+- **Member feature** — service, provider, add-member screen (with role dropdown + unit dropdown)
+- **Dashboard** — admin-only tiles for "Manage Units" and "Manage Members"
+- **Routes** — `/units`, `/units/new`, `/members/new`
+- **`flutter analyze` — zero issues**
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/schemas/user.py` | Modified | Removed role from `UserRegister`; added `AdminCreateUser`, `AssignUnit` schemas; added `unit_id` to `UserResponse` |
+| `backend/app/schemas/complaint.py` | Modified | Added `image_url` field validator |
+| `backend/app/crud/crud_user.py` | Modified | Hardcoded MEMBER role; added `create_user_admin()`, `get_users()`, `assign_unit()`, `deactivate_user()` |
+| `backend/app/api/v1/endpoints/complaints.py` | Modified | Added pagination bounds with `Query` validators |
+| `backend/app/models/unit.py` | Created | `Unit` ORM model with COALESCE unique index |
+| `backend/app/models/user.py` | Modified | Added `unit_id` FK and `unit` relationship |
+| `backend/app/models/society.py` | Modified | Added `units` relationship |
+| `backend/app/models/__init__.py` | Modified | Exported `Unit` |
+| `backend/app/db/base.py` | Modified | Registered `Unit` for Alembic |
+| `backend/app/schemas/unit.py` | Created | `UnitCreate`, `UnitUpdate`, `UnitResponse`, `UnitBulkCreate` |
+| `backend/app/schemas/__init__.py` | Modified | Exported all new schemas |
+| `backend/app/crud/crud_unit.py` | Created | Full CRUD for units (create, bulk, list, update, delete) |
+| `backend/app/crud/__init__.py` | Modified | Exported all new CRUD functions |
+| `backend/app/api/v1/endpoints/units.py` | Created | Admin-only unit management endpoints |
+| `backend/app/api/v1/endpoints/members.py` | Created | Admin-only member management endpoints |
+| `backend/app/api/v1/__init__.py` | Modified | Mounted `units` and `members` routers |
+| `frontend/lib/core/network/api_client.dart` | Modified | Fixed `QueuedInterceptor` async bug |
+| `frontend/lib/core/constants/api_constants.dart` | Modified | Added units + members endpoint paths |
+| `frontend/lib/shared/models/user_model.dart` | Modified | Added `unitId` field |
+| `frontend/lib/shared/models/unit_model.dart` | Created | `UnitModel` with `displayLabel` getter |
+| `frontend/lib/features/units/services/unit_service.dart` | Created | Dio calls for unit CRUD |
+| `frontend/lib/features/units/providers/unit_provider.dart` | Created | `UnitState` + `UnitNotifier` (Riverpod) |
+| `frontend/lib/features/units/screens/units_list_screen.dart` | Created | Admin list view with delete |
+| `frontend/lib/features/units/screens/create_unit_screen.dart` | Created | Create unit form |
+| `frontend/lib/features/members/services/member_service.dart` | Created | Dio calls for member management |
+| `frontend/lib/features/members/providers/member_provider.dart` | Created | `MemberState` + `MemberNotifier` (Riverpod) |
+| `frontend/lib/features/members/screens/add_member_screen.dart` | Created | Add member form with role + unit dropdowns |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Modified | Added admin-only tiles for Units + Members |
+| `frontend/lib/main.dart` | Modified | Added `/units`, `/units/new`, `/members/new` routes |
+
+---
+
+### Key Design Decisions
+
+- **Unit model is flexible** — `block_name` and `floor_number` are nullable, so it works for towers, row houses, or simple flat numbering
+- **COALESCE unique index** — prevents duplicate units even with NULL fields (PostgreSQL treats NULLs as distinct in normal unique constraints)
+- **`unit_id` FK uses `SET NULL`** — if a unit is deleted, users become unassigned rather than deleted
+- **`is_occupied` auto-managed** — set to true when admin assigns a member, set to false when last resident is removed
+- **Admin-only member creation** — public registration still works but forces `MEMBER` role; admin endpoint allows setting any role + unit
+- **Admin cannot deactivate themselves** — safeguard in the endpoint
+
+---
+
 ### 🚀 Start of Next Session — Pick Up Here
 
 **Before doing anything else:**
@@ -236,23 +365,28 @@ cd backend && alembic upgrade head
    brew services start postgresql@16
    ```
 2. Verify `.env` exists at `backend/.env` (see master plan Step 2 if not).
-3. Run migrations (only needed once, or after a new migration):
+3. Run migrations (includes new `units` table + `user.unit_id` column):
    ```bash
    cd /Users/masum/Development/Society/backend
+   alembic revision --autogenerate -m "add_units_table_and_user_unit_fk"
    alembic upgrade head
+   ```
+   **Note:** Review the generated migration to ensure the COALESCE unique index is correct. If autogenerate doesn't produce it, manually add:
+   ```python
+   op.execute("""
+       CREATE UNIQUE INDEX uq_unit_identity
+       ON units (society_id, COALESCE(block_name, ''), COALESCE(floor_number, ''), unit_number)
+   """)
    ```
 4. Start the backend server:
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
-5. Open Swagger at `http://localhost:8000/docs` and follow the **"How to Create a Society & Test the Full Login Flow"** steps in `claude_master_plan.txt` to create a society UUID and log in.
+5. Test the new flow in Swagger:
+   - Create society → login as admin → POST /units/ to configure layout → POST /members/ to add residents
 
 **Then continue with:**
 > **Phase 5 — Visitor & Security Management (Full-Stack)**
-
----
-
-### Next Phase: Phase 5 — Visitor & Security Management (Full-Stack)
 
 ---
 
@@ -264,3 +398,98 @@ cd backend && alembic upgrade head
 - IDE linter shows false-positive import errors (linter not pointed at the correct venv)
 - To run the app: `uvicorn app.main:app --reload` from `backend/`
 - To apply migrations: `alembic upgrade head` (requires running PostgreSQL)
+- `flutter analyze` — zero issues
+
+---
+
+---
+
+## Session 4 — 2026-03-15
+
+### What We Did This Session
+
+**Database Migration + Auth Bootstrap Fix + Role Clarification**
+
+Applied all pending Alembic migrations, fixed critical first-admin bootstrap problem, and clarified the role system.
+
+---
+
+### Part 1: Database Migration (units table + user.unit_id)
+
+- Fixed `.env` — `DATABASE_URL` was using `postgres:postgres` credentials but local PostgreSQL runs as `masum` (macOS Homebrew default). Changed to `postgresql://masum@localhost:5432/society_db`.
+- Applied all 3 migrations in order:
+  1. `55f848de971d` — create societies and users tables
+  2. `fe54b529790e` — create complaints table
+  3. `2f91e58ce8d9` — add units table + user.unit_id FK
+- Fixed autogenerated migration: Alembic tried to drop `uq_users_society_email` unique constraint (the User model was missing `__table_args__`). Added the constraint declaration to the model and removed the erroneous `drop_constraint` from the migration.
+
+### Part 2: First-Admin Bootstrap Fix
+
+**Problem:** After Session 3's bug fix that removed `role` from `UserRegister`, every user created via `POST /auth/register` was hardcoded as `MEMBER`. This created a chicken-and-egg problem — no way to create an admin, and `/members/` requires admin access.
+
+**Fix:** The first user registered in a society automatically becomes `ADMIN`. Subsequent users get `MEMBER`. This is checked via a simple count query in `create_user()`.
+
+### Part 3: Role System Clarification
+
+Confirmed the four roles match the intended permissions:
+
+| Role | Who | Can Do |
+|------|-----|--------|
+| `ADMIN` | Society admin | Everything |
+| `COMMITTEE` | Secretary, Chairman, Treasurer | Create members, manage complaints, create events. Also own units. |
+| `MEMBER` | Regular house owner | File complaints, view own data |
+| `SUPPORT_STAFF` | Security, cleaners | Log visitors, limited access |
+
+No code changes needed — the existing role hierarchy in `dependencies.py` already handles this correctly.
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/.env` | Modified | Fixed DATABASE_URL to use local macOS user (`masum`) instead of `postgres:postgres` |
+| `backend/app/crud/crud_user.py` | Modified | First user in society auto-becomes ADMIN (bootstrap fix) |
+| `backend/app/models/user.py` | Modified | Added `__table_args__` with `UniqueConstraint("society_id", "email")` to keep Alembic in sync |
+| `backend/migrations/versions/2f91e58ce8d9_add_units_table_and_user_unit_fk.py` | Created | Migration: creates `units` table, adds `unit_id` FK to users, COALESCE unique index |
+
+---
+
+### Verified End-to-End Flow
+
+```
+1. POST /auth/society/register → created "Test Society" → got UUID
+2. POST /auth/register?society_id=UUID → first user → role = "admin" ✅
+3. POST /auth/login → got JWT token ✅
+4. POST /members/ with Bearer token → created member successfully ✅
+```
+
+---
+
+### 🚀 Start of Next Session — Pick Up Here
+
+**Before doing anything else:**
+
+1. Start PostgreSQL:
+   ```bash
+   brew services start postgresql@16
+   ```
+2. Start the backend server:
+   ```bash
+   cd /Users/masum/Development/Society/backend
+   uvicorn app.main:app --reload --port 8000
+   ```
+3. All migrations are applied. Database is ready.
+
+**Then continue with:**
+> **Phase 5 — Visitor & Security Management (Full-Stack)**
+
+---
+
+### Environment Notes
+
+- PostgreSQL 16 installed via Homebrew, running on localhost:5432
+- Database `society_db` created and all 3 migrations applied
+- `.env` uses `postgresql://masum@localhost:5432/society_db` (no password, trust auth)
+- Server verified: health check, society registration, user registration (auto-admin), login, member creation all working
+- `flutter analyze` — zero issues

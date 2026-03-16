@@ -28,6 +28,7 @@ class Society(Base):
 
     # Relationships
     users: Mapped[list["User"]] = relationship("User", back_populates="society")  # noqa: F821
+    units: Mapped[list["Unit"]] = relationship("Unit", back_populates="society")  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<Society id={self.id} name={self.name!r}>"

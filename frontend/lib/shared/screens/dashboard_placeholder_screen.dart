@@ -35,7 +35,8 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.apartment, color: AppColors.primary, size: 30),
+                child: const Icon(Icons.apartment,
+                    color: AppColors.primary, size: 30),
               ),
               const SizedBox(width: 14),
               Column(
@@ -43,11 +44,13 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Welcome, ${user?.fullName ?? 'Resident'}!',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -81,29 +84,47 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
             onTap: () => context.push('/complaints'),
           ),
 
+          // Admin-only tiles
+          if (user?.role == 'admin') ...[
+            _ModuleTile(
+              icon: Icons.home_work_outlined,
+              label: 'Manage Units',
+              subtitle: 'Configure society layout',
+              color: AppColors.info,
+              onTap: () => context.push('/units'),
+            ),
+            _ModuleTile(
+              icon: Icons.people_outline,
+              label: 'Manage Members',
+              subtitle: 'Add members to units',
+              color: AppColors.accent,
+              onTap: () => context.push('/members/new'),
+            ),
+          ],
+
           // Coming soon tiles
-          _ModuleTile(
+          const _ModuleTile(
             icon: Icons.security_outlined,
             label: 'Visitor Management',
             subtitle: 'Coming in Phase 5',
             color: AppColors.info,
             onTap: null,
           ),
-          _ModuleTile(
+          const _ModuleTile(
             icon: Icons.receipt_long_outlined,
             label: 'Payments & Bills',
             subtitle: 'Coming in Phase 6',
             color: AppColors.success,
             onTap: null,
           ),
-          _ModuleTile(
+          const _ModuleTile(
             icon: Icons.meeting_room_outlined,
             label: 'Facility Booking',
             subtitle: 'Coming in Phase 6',
             color: AppColors.accent,
             onTap: null,
           ),
-          _ModuleTile(
+          const _ModuleTile(
             icon: Icons.how_to_vote_outlined,
             label: 'Polling & Voting',
             subtitle: 'Coming in Phase 6',
@@ -150,7 +171,8 @@ class _ModuleTile extends StatelessWidget {
             child: Icon(icon, color: color, size: 22),
           ),
           title: Text(label,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           subtitle: Text(subtitle,
               style: const TextStyle(
                   color: AppColors.textSecondary, fontSize: 12)),

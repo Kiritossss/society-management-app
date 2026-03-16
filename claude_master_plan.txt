@@ -107,6 +107,7 @@ API docs available at: http://localhost:8000/docs
 | 2 | Authentication & Multi-Tenancy | ✅ Done |
 | 3 | Flutter App Foundation | ✅ Done |
 | 4 | Complaint Management (full-stack) | ✅ Done |
+| 4.5 | Unit Model + Member Management + Bug Fixes | ✅ Done |
 | 5 | Visitor & Security Management | ⏳ Next |
 | 6 | Maintenance & Payments | ⏳ Pending |
 | 7 | Push Notifications | ⏳ Pending |

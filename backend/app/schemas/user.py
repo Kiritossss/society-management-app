@@ -10,7 +10,6 @@ class UserRegister(BaseModel):
     full_name: str
     email: EmailStr
     password: str
-    role: UserRole = UserRole.MEMBER
 
     @field_validator("password")
     @classmethod
@@ -32,11 +31,38 @@ class UserLogin(BaseModel):
     password: str
 
 
+class AdminCreateUser(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.MEMBER
+    unit_id: uuid.UUID | None = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+    @field_validator("full_name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Full name cannot be blank")
+        return v.strip()
+
+
+class AssignUnit(BaseModel):
+    unit_id: uuid.UUID | None
+
+
 class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: uuid.UUID
     society_id: uuid.UUID
+    unit_id: uuid.UUID | None
     email: EmailStr
     full_name: str
     role: UserRole

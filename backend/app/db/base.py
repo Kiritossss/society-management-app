@@ -4,4 +4,5 @@
 from app.db.base_class import Base  # noqa: F401
 from app.models.society import Society  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.models.unit import Unit  # noqa: F401
 from app.models.complaint import Complaint  # noqa: F401

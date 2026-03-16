@@ -8,6 +8,9 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
 import 'features/complaints/screens/complaints_list_screen.dart';
 import 'features/complaints/screens/create_complaint_screen.dart';
+import 'features/members/screens/add_member_screen.dart';
+import 'features/units/screens/create_unit_screen.dart';
+import 'features/units/screens/units_list_screen.dart';
 import 'shared/screens/dashboard_placeholder_screen.dart';
 
 void main() {
@@ -50,6 +53,18 @@ class SocietyApp extends ConsumerWidget {
         GoRoute(
           path: '/complaints/new',
           builder: (_, __) => const CreateComplaintScreen(),
+        ),
+        GoRoute(
+          path: '/units',
+          builder: (_, __) => const UnitsListScreen(),
+        ),
+        GoRoute(
+          path: '/units/new',
+          builder: (_, __) => const CreateUnitScreen(),
+        ),
+        GoRoute(
+          path: '/members/new',
+          builder: (_, __) => const AddMemberScreen(),
         ),
       ],
     );

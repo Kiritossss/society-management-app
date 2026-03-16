@@ -39,7 +39,7 @@ class ApiClient {
   }
 }
 
-class _AuthInterceptor extends Interceptor {
+class _AuthInterceptor extends QueuedInterceptor {
   final FlutterSecureStorage _storage;
   _AuthInterceptor(this._storage);
 
@@ -54,7 +54,6 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // Surface a clean message instead of raw Dio errors
     handler.next(err);
   }
 }
