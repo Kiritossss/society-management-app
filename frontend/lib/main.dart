@@ -4,13 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/screens/activate_screen.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/register_screen.dart';
 import 'features/complaints/screens/complaints_list_screen.dart';
 import 'features/complaints/screens/create_complaint_screen.dart';
 import 'features/members/screens/add_member_screen.dart';
 import 'features/units/screens/create_unit_screen.dart';
 import 'features/units/screens/units_list_screen.dart';
+import 'features/visitors/screens/log_entry_screen.dart';
+import 'features/visitors/screens/pending_approvals_screen.dart';
+import 'features/visitors/screens/pre_approve_screen.dart';
+import 'features/visitors/screens/staff_dashboard_screen.dart';
+import 'features/visitors/screens/visitors_list_screen.dart';
 import 'shared/screens/dashboard_placeholder_screen.dart';
 
 void main() {
@@ -30,7 +35,7 @@ class SocietyApp extends ConsumerWidget {
         final isAuth = authState.status == AuthStatus.authenticated;
         final isInitial = authState.status == AuthStatus.initial;
         final onAuthRoute = state.matchedLocation == '/login' ||
-            state.matchedLocation == '/register' ||
+            state.matchedLocation == '/activate' ||
             state.matchedLocation == '/';
 
         if (isInitial) return null; // still loading session
@@ -41,7 +46,7 @@ class SocietyApp extends ConsumerWidget {
       routes: [
         GoRoute(path: '/', redirect: (_, __) => '/login'),
         GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-        GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+        GoRoute(path: '/activate', builder: (_, __) => const ActivateScreen()),
         GoRoute(
           path: '/dashboard',
           builder: (_, __) => const DashboardPlaceholderScreen(),
@@ -65,6 +70,27 @@ class SocietyApp extends ConsumerWidget {
         GoRoute(
           path: '/members/new',
           builder: (_, __) => const AddMemberScreen(),
+        ),
+        // Visitor routes
+        GoRoute(
+          path: '/visitors',
+          builder: (_, __) => const VisitorsListScreen(),
+        ),
+        GoRoute(
+          path: '/visitors/pre-approve',
+          builder: (_, __) => const PreApproveScreen(),
+        ),
+        GoRoute(
+          path: '/visitors/pending',
+          builder: (_, __) => const PendingApprovalsScreen(),
+        ),
+        GoRoute(
+          path: '/visitors/gate',
+          builder: (_, __) => const StaffDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/visitors/log-entry',
+          builder: (_, __) => const LogEntryScreen(),
         ),
       ],
     );

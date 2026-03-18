@@ -8,9 +8,9 @@ class ApiConstants {
   static const String apiVersion = '/api/v1';
 
   // Auth
-  static const String societyRegister = '$apiVersion/auth/society/register';
-  static const String userRegister = '$apiVersion/auth/register';
   static const String login = '$apiVersion/auth/login';
+  static const String activate = '$apiVersion/auth/activate';
+  static const String lookup = '$apiVersion/auth/lookup';
 
   // Units
   static const String units = '$apiVersion/units';
@@ -18,6 +18,13 @@ class ApiConstants {
 
   // Members
   static const String members = '$apiVersion/members';
+
+  // Visitors
+  static const String visitors = '$apiVersion/visitors';
+  static const String visitorPreApprove = '$apiVersion/visitors/pre-approve';
+  static const String visitorLogEntry = '$apiVersion/visitors/log-entry';
+  static const String visitorPending = '$apiVersion/visitors/pending';
+  static const String visitorPreApproved = '$apiVersion/visitors/pre-approved';
 
   // Timeouts
   static const int connectTimeout = 10000; // ms

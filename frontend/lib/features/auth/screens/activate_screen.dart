@@ -4,27 +4,26 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 
-class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+class ActivateScreen extends ConsumerStatefulWidget {
+  const ActivateScreen({super.key});
 
   @override
-  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<ActivateScreen> createState() => _ActivateScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+class _ActivateScreenState extends ConsumerState<ActivateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _societyIdCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _tokenCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
-    _societyIdCtrl.dispose();
-    _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _tokenCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
@@ -32,10 +31,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).register(
-          societyId: _societyIdCtrl.text.trim(),
-          fullName: _nameCtrl.text.trim(),
+    await ref.read(authProvider.notifier).activate(
           email: _emailCtrl.text.trim(),
+          inviteToken: _tokenCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
   }
@@ -62,7 +60,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: () => context.pop()),
-        title: const Text('Create Account'),
+        title: const Text('Activate Account'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -72,35 +70,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Society ID
-                _label('Society ID'),
-                TextFormField(
-                  controller: _societyIdCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your society UUID',
-                    prefixIcon: Icon(Icons.business),
+                // Info card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.info.withValues(alpha: 0.2)),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Society ID is required' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Full name
-                _label('Full Name'),
-                TextFormField(
-                  controller: _nameCtrl,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    hintText: 'John Doe',
-                    prefixIcon: Icon(Icons.person_outline),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          color: AppColors.info, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Enter your email, the invite token from your admin, and set a password. You\'ll use this email and password to log in next time.',
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Full name is required' : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // Email
-                _label('Email'),
+                const Text('Email',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -111,10 +110,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: (v) =>
                       (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+
+                // Invite token
+                const Text('Invite Token',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _tokenCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Paste your invite token',
+                    prefixIcon: Icon(Icons.vpn_key_outlined),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Invite token is required'
+                      : null,
+                ),
+                const SizedBox(height: 20),
 
                 // Password
-                _label('Password'),
+                const Text('Set Password',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
@@ -125,24 +142,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       icon: Icon(_obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                  validator: (v) => (v == null || v.length < 8)
+                      ? 'Password must be at least 8 characters'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+
+                // Confirm password
+                const Text('Confirm Password',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _confirmCtrl,
+                  obscureText: _obscureConfirm,
+                  decoration: InputDecoration(
+                    hintText: 'Re-enter password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureConfirm
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
                   validator: (v) =>
-                      (v == null || v.length < 8) ? 'Password must be at least 8 characters' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm password
-                _label('Confirm Password'),
-                TextFormField(
-                  controller: _confirmCtrl,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Re-enter password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  validator: (v) => v != _passwordCtrl.text ? 'Passwords do not match' : null,
+                      v != _passwordCtrl.text ? 'Passwords do not match' : null,
                 ),
                 const SizedBox(height: 32),
 
@@ -155,14 +184,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text('Create Account'),
+                      : const Text('Activate & Sign In'),
                 ),
                 const SizedBox(height: 16),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Already have an account? ',
+                    const Text('Already activated? ',
                         style: TextStyle(color: AppColors.textSecondary)),
                     TextButton(
                       onPressed: () => context.pop(),
@@ -177,9 +206,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
   }
-
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
-      );
 }

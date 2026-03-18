@@ -33,7 +33,7 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = get_user_by_id(db, uuid.UUID(society_id), uuid.UUID(user_id))
+    user = get_user_by_id(db, society_id, uuid.UUID(user_id))
     if not user or not user.is_active:
         raise credentials_exception
     return user

@@ -5,6 +5,7 @@ from enum import Enum
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from sqlalchemy.sql import func
 
 from app.db.base_class import Base
@@ -27,8 +28,8 @@ class User(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     # --- Multi-tenancy: every user belongs to exactly one society ---
-    society_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    society_id: Mapped[str] = mapped_column(
+        String(5),
         ForeignKey("societies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -40,6 +41,13 @@ class User(Base):
         String(50), nullable=False, default=UserRole.MEMBER
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_activated: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    invite_token: Mapped[str | None] = mapped_column(
+        String(32), unique=True, nullable=True, index=True
+    )
+    invite_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

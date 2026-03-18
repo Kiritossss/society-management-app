@@ -10,7 +10,7 @@ from app.schemas.complaint import ComplaintCreate, ComplaintStatusUpdate
 
 def create_complaint(
     db: Session,
-    society_id: uuid.UUID,
+    society_id: str,
     raised_by_id: uuid.UUID,
     data: ComplaintCreate,
 ) -> Complaint:
@@ -30,7 +30,7 @@ def create_complaint(
 
 def get_complaints(
     db: Session,
-    society_id: uuid.UUID,
+    society_id: str,
     requesting_user_id: uuid.UUID,
     requesting_user_role: UserRole,
     skip: int = 0,
@@ -51,7 +51,7 @@ def get_complaints(
 
 
 def get_complaint_by_id(
-    db: Session, society_id: uuid.UUID, complaint_id: uuid.UUID
+    db: Session, society_id: str, complaint_id: uuid.UUID
 ) -> Complaint | None:
     return (
         db.query(Complaint)

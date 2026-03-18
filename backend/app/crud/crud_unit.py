@@ -6,7 +6,7 @@ from app.models.unit import Unit
 from app.schemas.unit import UnitCreate, UnitUpdate
 
 
-def get_unit_by_id(db: Session, society_id: uuid.UUID, unit_id: uuid.UUID) -> Unit | None:
+def get_unit_by_id(db: Session, society_id: str, unit_id: uuid.UUID) -> Unit | None:
     return (
         db.query(Unit)
         .filter(Unit.society_id == society_id, Unit.id == unit_id)
@@ -14,7 +14,7 @@ def get_unit_by_id(db: Session, society_id: uuid.UUID, unit_id: uuid.UUID) -> Un
     )
 
 
-def get_units(db: Session, society_id: uuid.UUID, skip: int = 0, limit: int = 50) -> list[Unit]:
+def get_units(db: Session, society_id: str, skip: int = 0, limit: int = 50) -> list[Unit]:
     return (
         db.query(Unit)
         .filter(Unit.society_id == society_id)
@@ -25,7 +25,7 @@ def get_units(db: Session, society_id: uuid.UUID, skip: int = 0, limit: int = 50
     )
 
 
-def create_unit(db: Session, society_id: uuid.UUID, data: UnitCreate) -> Unit:
+def create_unit(db: Session, society_id: str, data: UnitCreate) -> Unit:
     unit = Unit(
         society_id=society_id,
         block_name=data.block_name,
@@ -40,7 +40,7 @@ def create_unit(db: Session, society_id: uuid.UUID, data: UnitCreate) -> Unit:
     return unit
 
 
-def create_units_bulk(db: Session, society_id: uuid.UUID, units: list[UnitCreate]) -> list[Unit]:
+def create_units_bulk(db: Session, society_id: str, units: list[UnitCreate]) -> list[Unit]:
     db_units = [
         Unit(
             society_id=society_id,

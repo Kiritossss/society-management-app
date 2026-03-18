@@ -59,7 +59,7 @@ class UnitResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: uuid.UUID
-    society_id: uuid.UUID
+    society_id: str
     block_name: str | None
     floor_number: str | None
     unit_number: str

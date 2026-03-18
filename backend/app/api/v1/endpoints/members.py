@@ -13,22 +13,26 @@ from app.crud.crud_user import (
     get_user_by_email,
     get_user_by_id,
     get_users,
+    regenerate_invite_token,
 )
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.user import AdminCreateUser, AssignUnit, UserResponse
+from app.schemas.user import AdminCreateUser, AssignUnit, MemberInviteResponse, UserResponse
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=MemberInviteResponse, status_code=status.HTTP_201_CREATED)
 def add_member(
     data: AdminCreateUser,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(require_admin)],
 ):
-    """Admin adds a member to the society with a role and optional unit assignment."""
-    # Check email uniqueness within this society
+    """
+    Admin adds a member to the society. No password needed —
+    an invite token is generated for the member to activate their account.
+    Share this token with the member (SMS, WhatsApp, email).
+    """
     existing = get_user_by_email(db, current_user.society_id, data.email)
     if existing:
         raise HTTPException(
@@ -36,7 +40,6 @@ def add_member(
             detail="A user with this email already exists in this society",
         )
 
-    # Validate unit belongs to this society if provided
     if data.unit_id:
         unit = get_unit_by_id(db, current_user.society_id, data.unit_id)
         if not unit:
@@ -59,6 +62,24 @@ def list_members(
     return get_users(db, society_id=current_user.society_id, skip=skip, limit=limit)
 
 
+@router.post("/{user_id}/reinvite", response_model=MemberInviteResponse)
+def reinvite_member(
+    user_id: uuid.UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_admin)],
+):
+    """Regenerate invite token for a member who hasn't activated yet."""
+    user = get_user_by_id(db, current_user.society_id, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.is_activated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already activated — cannot reinvite",
+        )
+    return regenerate_invite_token(db, user)
+
+
 @router.patch("/{user_id}/unit", response_model=UserResponse)
 def assign_member_unit(
     user_id: uuid.UUID,
@@ -71,7 +92,6 @@ def assign_member_unit(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # Validate the new unit if provided
     if data.unit_id:
         unit = get_unit_by_id(db, current_user.society_id, data.unit_id)
         if not unit:

@@ -45,6 +45,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  /// Look up societies for an email (returns list).
+  Future<List<SocietyLookupItem>> lookupSocieties(String email) async {
+    return _service.lookupSocieties(email: email);
+  }
+
+  /// Login with society code + email + password.
   Future<void> login({
     required String societyId,
     required String email,
@@ -66,22 +72,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> register({
-    required String societyId,
-    required String fullName,
+  /// Activate account with invite token + set password.
+  Future<void> activate({
     required String email,
+    required String inviteToken,
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
     try {
-      await _service.register(
-        societyId: societyId,
-        fullName: fullName,
+      final token = await _service.activate(
         email: email,
+        inviteToken: inviteToken,
         password: password,
       );
-      // Auto-login after registration
-      await login(societyId: societyId, email: email, password: password);
+      state = state.copyWith(status: AuthStatus.authenticated, token: token);
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
@@ -99,8 +103,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (e is Exception) {
       final msg = e.toString();
       if (msg.contains('401')) return 'Invalid email or password';
-      if (msg.contains('409')) return 'Email already registered in this society';
-      if (msg.contains('404')) return 'Society not found';
+      if (msg.contains('404')) return 'Invalid invite token';
+      if (msg.contains('409')) return 'Account is already activated';
+      if (msg.contains('410')) return 'Invite token has expired — ask your admin to resend';
       if (msg.contains('SocketException') || msg.contains('connection')) {
         return 'No connection — check your network';
       }

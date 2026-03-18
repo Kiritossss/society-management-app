@@ -1,6 +1,6 @@
 # Society Management App - Master Step-by-Step Development Plan
 
-This guide is designed to be fed into Claude (or any AI) session-by-session to build the application efficiently without exceeding token context windows. 
+This guide is designed to be fed into Claude (or any AI) session-by-session to build the application efficiently without exceeding token context windows.
 
 **Instructions for the AI:**
 - Only execute ONE phase at a time. Do not attempt to build the whole app in one prompt.
@@ -8,7 +8,48 @@ This guide is designed to be fed into Claude (or any AI) session-by-session to b
 
 ---
 
-## ⚙️ One-Time Setup (Do This Before Testing Anything)
+## Architecture Overview
+
+This is a multi-tenant SaaS product sold to housing societies. Each society gets a 5-letter code (e.g. `MKQWZ`).
+
+### Two Frontends, One Backend
+
+| Frontend | Users | Purpose |
+|----------|-------|---------|
+| **Admin Web Portal** (React/Next.js) | Admin, Committee | Society setup, unit management, member invites, complaint oversight, billing config, reports |
+| **Mobile App** (Flutter) | Residents, Support Staff | Activate account via invite, file complaints, approve visitors, pay bills, book amenities |
+
+### Auth Flow (Invite-Based)
+
+```
+1. Admin registers society (web portal or Swagger) → gets 5-letter code
+2. Admin logs into web portal using society code + email + password
+3. Admin adds members → system generates a unique invite token per member
+4. Resident receives invite (SMS/WhatsApp/email link)
+5. Resident opens mobile app → enters invite token → sets password → account activated
+6. Resident logs in with email + password (society code auto-embedded in their account)
+```
+
+**Key principle:** Residents never need to know the society code. Admin controls who joins.
+
+### Multi-Society Users
+
+A person can own flats in multiple societies (e.g. `john@gmail.com` in both Green Valley and Palm Heights). The DB supports this — `UNIQUE(society_id, email)` allows the same email in different societies.
+
+**Mobile login flow for multi-society users:**
+```
+1. Enter email
+2. Backend returns list of societies for that email (names only, not codes)
+3. If only 1 → auto-select, go to password screen
+4. If multiple → show picker: "Which society?"
+5. Enter password → logged in to selected society
+```
+
+Endpoint: `POST /api/v1/auth/lookup` — accepts email, returns society names the user belongs to.
+
+---
+
+## One-Time Setup (Do This Before Testing Anything)
 
 ### Step 1 — Start PostgreSQL
 ```bash
@@ -19,9 +60,8 @@ createdb society_db
 
 ### Step 2 — Create the .env file
 File location: `backend/.env`
-Copy from `backend/.env.example` and fill in:
 ```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/society_db
+DATABASE_URL=postgresql://masum@localhost:5432/society_db
 SECRET_KEY=<run: openssl rand -hex 32>
 DEBUG=True
 ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -39,17 +79,15 @@ alembic upgrade head
 cd /Users/masum/Development/Society/backend
 uvicorn app.main:app --reload --port 8000
 ```
-API docs available at: http://localhost:8000/docs
+API docs (Swagger UI) available at: http://localhost:8000/docs
 
 ---
 
-## 🧪 How to Create a Society & Test the Full Login Flow
-
-> Do all of this via Swagger UI at http://localhost:8000/docs
+## How to Test the Current Flow (via Swagger UI)
 
 ### Step 1 — Register a Society
 - Open: `POST /api/v1/auth/society/register`
-- Click "Try it out" → fill in the body:
+- Body:
 ```json
 {
   "name": "Green Valley Society",
@@ -57,27 +95,24 @@ API docs available at: http://localhost:8000/docs
   "contact_email": "admin@greenvalley.com"
 }
 ```
-- Click Execute.
-- **Copy the `id` field from the response** — this is your `society_id` (UUID).
-- Example: `"id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"`
+- **Copy the `id` field** — this is your 5-letter society code (e.g. `MKQWZ`).
 
-### Step 2 — Register a User (Admin)
+### Step 2 — Register the Admin User
 - Open: `POST /api/v1/auth/register`
-- Add query param `society_id` = the UUID you copied above
+- Query param `society_id` = the 5-letter code you copied
 - Body:
 ```json
 {
   "full_name": "Your Name",
   "email": "you@example.com",
-  "password": "yourpassword123",
-  "role": "admin"
+  "password": "yourpassword123"
 }
 ```
-- Click Execute. User is created.
+- First user in a society auto-becomes ADMIN.
 
 ### Step 3 — Login
 - Open: `POST /api/v1/auth/login`
-- Add query param `society_id` = the UUID
+- Query param `society_id` = the 5-letter code
 - Body:
 ```json
 {
@@ -87,84 +122,171 @@ API docs available at: http://localhost:8000/docs
 ```
 - Copy the `access_token` from the response.
 
-### Step 4 — Authorise in Swagger (to test protected endpoints)
-- Click the green **"Authorize"** button at the top of the Swagger page
-- Paste your token in the `Bearer` field → click Authorize
-- Now all protected endpoints (complaints, etc.) will work
-
-### Step 5 — Login from the Flutter App
-- Run the Flutter app: `cd frontend && flutter run -d chrome --web-port 3000`
-- Enter the `society_id` UUID, your email, and password on the Login screen
-- You will land on the Dashboard and can navigate to Complaints
+### Step 4 — Authorise in Swagger
+- Click the green **"Authorize"** button at the top
+- Paste your token → click Authorize
+- All protected endpoints now work
 
 ---
 
-## 📊 Current Progress
+## Current Progress
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Database & Core Setup | ✅ Done |
-| 2 | Authentication & Multi-Tenancy | ✅ Done |
-| 3 | Flutter App Foundation | ✅ Done |
-| 4 | Complaint Management (full-stack) | ✅ Done |
-| 4.5 | Unit Model + Member Management + Bug Fixes | ✅ Done |
-| 5 | Visitor & Security Management | ⏳ Next |
-| 6 | Maintenance & Payments | ⏳ Pending |
-| 7 | Push Notifications | ⏳ Pending |
-
-## 🔖 Deferred Decisions
-- **Society Registration UI in Flutter**: Decided to keep onboarding via Swagger for now (Option A).
-  Option B (Flutter screen) can be added later. See SESSION_LOG.md for details.
+| 1 | Database & Core Setup | Done |
+| 2 | Authentication & Multi-Tenancy | Done |
+| 3 | Flutter App Foundation | Done |
+| 4 | Complaint Management (full-stack) | Done |
+| 4.5 | Unit Model + Member Management + Bug Fixes | Done |
+| 5 | Auth Redesign — Invite-Based Registration | Done |
+| 6 | Admin Web Portal (React/Next.js) | Done |
+| 7 | Mobile App Redesign — Invite Activation Flow | Done |
+| 8 | Visitor & Security Management (full-stack) | Done |
+| 8.5 | Bulk Excel Import — Units & Members | Pending |
+| 9 | Maintenance & Payments (full-stack) | Pending |
+| 10 | Facility Booking & Polling (full-stack) | Pending |
+| 11 | Push Notifications | Pending |
 
 ---
 
-
-## Phase 1: Database & Core Setup (Backend)
+## Phase 1: Database & Core Setup (Backend) — DONE
 **Objective**: Establish the foundation of the FastAPI backend and database.
 1. Write the SQLAlchemy Base setup (`backend/app/db/base.py`, `backend/app/db/session.py`).
-2. Write the database models for `Society` and `User` (`backend/app/models/society.py`, `backend/app/models/user.py`). 
+2. Write the database models for `Society` and `User` (`backend/app/models/society.py`, `backend/app/models/user.py`).
     - Ensure strict multi-tenancy rules (`society_id` on Users).
 3. Set up Alembic and generate the first migration schema.
 
-## Phase 2: Authentication & Multi-Tenancy (Backend)
+## Phase 2: Authentication & Multi-Tenancy (Backend) — DONE
 **Objective**: Build secure login and role-based access.
 1. Write Pydantic schemas for `User` and `Society` creation & login (`backend/app/schemas/`).
 2. Write the authentication dependency (`backend/app/api/dependencies.py`) to verify JWTs, user roles, and extract `society_id` securely.
 3. Create the auth endpoints (`backend/app/api/v1/endpoints/auth.py`).
 
-## Phase 3: Flutter App Foundation (Frontend)
+## Phase 3: Flutter App Foundation (Frontend) — DONE
 **Objective**: Setup the mobile app shell.
 1. Configure `pubspec.yaml` with required packages (Riverpod/Provider, Dio/HTTP, GoRouter).
 2. Create the core theme and constants (`frontend/lib/core/`).
 3. Set up the API networking client (Dio) with an interceptor to automatically attach JWT tokens.
 4. Build the Login & Registration screens (`frontend/lib/features/auth/`).
 
-## Phase 4: Core Feature 1 - Complaint Management
-*Note: We develop features full-stack, module by module.*
-1. **Backend**: 
-    - Create `Complaint` model, schemas, and CRUD operations.
-    - Build FastAPI endpoints (`backend/app/api/v1/endpoints/complaints.py`).
-2. **Frontend**: 
-    - Build Flutter UI to list complaints.
-    - Build Flutter UI to create a new complaint (with image upload snippet).
-    - Connect Flutter UI to the backend endpoints.
+## Phase 4: Complaint Management (Full-Stack) — DONE
+1. **Backend**: Create `Complaint` model, schemas, and CRUD operations. Build API endpoints.
+2. **Frontend**: Build Flutter UI for listing and creating complaints.
 
-## Phase 5: Core Feature 2 - Visitor & Security Management
-1. **Backend**: 
+## Phase 4.5: Unit Model + Member Management + Bug Fixes — DONE
+1. Created Unit model (flexible for towers, blocks, row houses).
+2. Admin-only CRUD for units (single + bulk create).
+3. Admin-only member management (create with role + unit assignment, deactivate).
+4. Security fixes: role escalation bug, pagination bounds, SSRF/XSS on image_url, async interceptor bug.
+
+---
+
+## Phase 5: Auth Redesign — Invite-Based Registration (Backend)
+**Objective**: Replace public self-registration with admin-controlled invite flow.
+
+### What changes:
+1. **New: `InviteToken` model** (or fields on `User`):
+   - `invite_token` (unique, short, URL-safe string)
+   - `invite_expires_at` (e.g., 7 days from creation)
+   - `is_activated` (boolean — false until resident sets password)
+2. **Admin creates a member → invite token auto-generated**:
+   - `POST /api/v1/members/` already exists — enhance it to return an invite token
+   - Admin shares the token with the resident (out-of-band: SMS, WhatsApp, email)
+3. **New endpoint: `POST /api/v1/auth/activate`**:
+   - Resident sends `invite_token` + `password`
+   - Backend validates token, sets hashed password, marks `is_activated = true`
+   - Returns JWT — resident is immediately logged in
+4. **Restrict or remove `POST /api/v1/auth/register`**:
+   - Only admin-created invites should work (no open self-registration)
+   - Keep `/auth/society/register` for society onboarding
+5. **New endpoint: `POST /api/v1/auth/lookup`** (multi-society support):
+   - Resident sends `email`
+   - Backend returns list of `{society_id, society_name}` for all societies that email belongs to
+   - Mobile app: if 1 result → auto-select; if multiple → show picker
+   - Does NOT reveal passwords or tokens — only society names
+6. **Login update: `POST /api/v1/auth/login`**:
+   - Now accepts `society_id` + `email` + `password` (society_id comes from lookup step)
+   - Admin login (web portal) still uses society code + email + password directly
+
+### Migration:
+- Add `invite_token`, `invite_expires_at`, `is_activated` columns to `users` table
+
+## Phase 6: Admin Web Portal (React/Next.js)
+**Objective**: Build the web-based admin dashboard.
+
+### Setup:
+- Create `web/` directory (Next.js + Tailwind CSS + shadcn/ui)
+- Auth: admin login page (society code + email + password), JWT stored in httpOnly cookie
+- Protected routes via middleware
+
+### Pages:
+1. **Dashboard** — society stats (total units, members, open complaints)
+2. **Units Management** — table view, bulk add, edit, delete
+3. **Members Management** — table view, add member (generates invite), view invite status, deactivate
+4. **Complaints** — list all, filter by status/category, update status
+5. **Settings** — society profile, admin profile
+
+### Key principle:
+- Reuses the SAME backend API — no backend duplication
+- Admin JWT has `role: admin` — same RBAC guards apply
+
+## Phase 7: Mobile App Redesign — Invite Activation Flow
+**Objective**: Simplify the Flutter app for resident-only use.
+
+### Changes:
+1. **Remove** society registration and user self-registration screens
+2. **New: Activation Screen** — resident enters invite token + sets password
+3. **Simplified Login** — email + password only (no society code needed on mobile)
+4. **Dashboard** — resident-only tiles (complaints, visitors, payments, bookings)
+5. **Support Staff variant** — if role is `support_staff`, show watchman dashboard instead
+
+## Phase 8: Visitor & Security Management (Full-Stack)
+1. **Backend**:
     - Create `VisitorLog` model, schemas, and CRUD.
     - Build endpoints ensuring only `Support Staff` (watchmen) can create entries.
-2. **Frontend**:
-    - Build Watchman Dashboard UI to log entry/exit.
-    - Build Resident UI to approve/deny entry.
+    - Residents can pre-approve visitors.
+2. **Admin Web Portal**: Visitor log table, analytics.
+3. **Mobile (Resident)**: Approve/deny visitor entry, view visitor history.
+4. **Mobile (Support Staff)**: Watchman dashboard to log entry/exit, scan pre-approval.
 
-## Phase 6: Core Feature 3 - Maintenance & Payments
+## Phase 8.5: Bulk Excel Import — Units & Members
+**Objective**: Allow admin to upload an Excel/CSV file to create hundreds of units and members in one go, instead of adding them one by one.
+
+### Backend:
+1. **New endpoint: `POST /api/v1/units/import`** (Admin-only):
+   - Accepts an uploaded Excel (.xlsx) or CSV file
+   - Parses rows into unit records (block_name, floor_number, unit_number, unit_type, area_sqft)
+   - Validates all rows, returns errors for invalid rows (e.g. duplicates)
+   - Creates all valid units in a single transaction
+2. **New endpoint: `POST /api/v1/members/import`** (Admin-only):
+   - Accepts an uploaded Excel/CSV file
+   - Parses rows into member records (full_name, email, role, unit_number)
+   - Auto-generates invite tokens for each member
+   - Creates all members + sends back list of invite tokens
+   - Validates: no duplicate emails within society, unit must exist
+3. **Dependencies**: `openpyxl` (for .xlsx parsing), `python-multipart` (for file uploads)
+
+### Admin Web Portal:
+1. **Units page** — "Import from Excel" button → file picker → preview table → confirm → bulk create
+2. **Members page** — "Import from Excel" button → file picker → preview table → confirm → shows invite tokens
+3. **Template download** — provide downloadable Excel templates with correct column headers
+
+### Mobile (Admin/Committee):
+1. Same import buttons on Units and Members screens (file picker via `file_picker` Flutter package)
+
+## Phase 9: Maintenance & Payments (Full-Stack)
 1. **Backend**:
     - Create `Bill` and `Payment` models.
     - Build billing endpoints to auto-generate society dues.
-2. **Frontend**:
-    - Build Billing Dashboard UI for residents to view dues.
-    - Integrate payment gateway (e.g., Stripe) stub on Flutter.
+2. **Admin Web Portal**: Billing dashboard, generate bills, payment status tracking.
+3. **Mobile (Resident)**: View dues, make payments (Stripe/Razorpay stub).
 
-## Phase 7: Polish & Push Notifications
-1. **Backend**: Setup Firebase Admin SDK in FastAPI to send FCM push messages on events (e.g., new visitor, new complaint).
-2. **Frontend**: Integrate Firebase Cloud Messaging package in Flutter to receive pushes and navigate to the relevant screen.
+## Phase 10: Facility Booking & Polling (Full-Stack)
+1. **Facility Booking**: Amenity reservations with conflict detection.
+2. **Polling/Voting**: Democratic decision-making — create polls, cast votes, view results.
+3. Both available on web portal (admin creates) and mobile (residents participate).
+
+## Phase 11: Polish & Push Notifications
+1. **Backend**: Setup Firebase Admin SDK in FastAPI to send FCM push messages on events (new visitor, new complaint, bill generated, poll created).
+2. **Mobile**: Integrate Firebase Cloud Messaging in Flutter.
+3. **Web Portal**: Toast/badge notifications for admin.

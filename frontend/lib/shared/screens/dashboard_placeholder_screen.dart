@@ -10,6 +10,9 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).token?.user;
+    final role = user?.role ?? 'member';
+    final isAdminOrCommittee = role == 'admin' || role == 'committee';
+    final isSupportStaff = role == 'support_staff';
 
     return Scaffold(
       appBar: AppBar(
@@ -56,7 +59,7 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      (user?.role ?? 'member').toUpperCase(),
+                      role.toUpperCase(),
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -75,7 +78,7 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // Complaints tile — Phase 4 ✅
+          // Complaints tile — live for everyone
           _ModuleTile(
             icon: Icons.report_problem_outlined,
             label: 'Complaints',
@@ -84,8 +87,8 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
             onTap: () => context.push('/complaints'),
           ),
 
-          // Admin-only tiles
-          if (user?.role == 'admin') ...[
+          // Admin / Committee tiles
+          if (isAdminOrCommittee) ...[
             _ModuleTile(
               icon: Icons.home_work_outlined,
               label: 'Manage Units',
@@ -100,34 +103,50 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
               color: AppColors.accent,
               onTap: () => context.push('/members/new'),
             ),
+            const _ModuleTile(
+              icon: Icons.event_outlined,
+              label: 'Events & Scheduling',
+              subtitle: 'Coming soon',
+              color: AppColors.primaryLight,
+              onTap: null,
+            ),
           ],
 
-          // Coming soon tiles
-          const _ModuleTile(
-            icon: Icons.security_outlined,
-            label: 'Visitor Management',
-            subtitle: 'Coming in Phase 5',
-            color: AppColors.info,
-            onTap: null,
-          ),
+          // Visitor Management — live for everyone
+          if (isSupportStaff)
+            _ModuleTile(
+              icon: Icons.security_outlined,
+              label: 'Gate Dashboard',
+              subtitle: 'Log entry/exit, view pre-approvals',
+              color: AppColors.info,
+              onTap: () => context.push('/visitors/gate'),
+            )
+          else
+            _ModuleTile(
+              icon: Icons.security_outlined,
+              label: 'Visitors',
+              subtitle: 'Pre-approve & track visitors',
+              color: AppColors.info,
+              onTap: () => context.push('/visitors'),
+            ),
           const _ModuleTile(
             icon: Icons.receipt_long_outlined,
             label: 'Payments & Bills',
-            subtitle: 'Coming in Phase 6',
+            subtitle: 'Coming in Phase 9',
             color: AppColors.success,
             onTap: null,
           ),
           const _ModuleTile(
             icon: Icons.meeting_room_outlined,
             label: 'Facility Booking',
-            subtitle: 'Coming in Phase 6',
+            subtitle: 'Coming in Phase 10',
             color: AppColors.accent,
             onTap: null,
           ),
           const _ModuleTile(
             icon: Icons.how_to_vote_outlined,
             label: 'Polling & Voting',
-            subtitle: 'Coming in Phase 6',
+            subtitle: 'Coming in Phase 10',
             color: AppColors.primaryLight,
             onTap: null,
           ),

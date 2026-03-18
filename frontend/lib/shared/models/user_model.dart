@@ -6,6 +6,7 @@ class UserModel {
   final String fullName;
   final String role;
   final bool isActive;
+  final bool isActivated;
   final DateTime createdAt;
 
   const UserModel({
@@ -16,6 +17,7 @@ class UserModel {
     required this.fullName,
     required this.role,
     required this.isActive,
+    required this.isActivated,
     required this.createdAt,
   });
 
@@ -27,6 +29,7 @@ class UserModel {
         fullName: json['full_name'] as String,
         role: json['role'] as String,
         isActive: json['is_active'] as bool,
+        isActivated: json['is_activated'] as bool? ?? true,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -38,6 +41,7 @@ class UserModel {
         'full_name': fullName,
         'role': role,
         'is_active': isActive,
+        'is_activated': isActivated,
         'created_at': createdAt.toIso8601String(),
       };
 }

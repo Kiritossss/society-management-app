@@ -1,4 +1,5 @@
-import uuid
+import random
+import string
 
 from sqlalchemy.orm import Session
 
@@ -6,16 +7,25 @@ from app.models.society import Society
 from app.schemas.society import SocietyCreate
 
 
+def _generate_society_code(db: Session) -> str:
+    """Generate a unique 5-uppercase-letter society code."""
+    while True:
+        code = "".join(random.choices(string.ascii_uppercase, k=5))
+        if not db.query(Society).filter(Society.id == code).first():
+            return code
+
+
 def get_society_by_email(db: Session, contact_email: str) -> Society | None:
     return db.query(Society).filter(Society.contact_email == contact_email).first()
 
 
-def get_society_by_id(db: Session, society_id: uuid.UUID) -> Society | None:
+def get_society_by_id(db: Session, society_id: str) -> Society | None:
     return db.query(Society).filter(Society.id == society_id).first()
 
 
 def create_society(db: Session, data: SocietyCreate) -> Society:
     society = Society(
+        id=_generate_society_code(db),
         name=data.name,
         address=data.address,
         contact_email=data.contact_email,

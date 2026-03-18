@@ -1,4 +1,16 @@
 from app.crud.crud_society import create_society, get_society_by_email, get_society_by_id
+from app.crud.crud_visitor import (
+    approve_visitor,
+    check_in_visitor,
+    check_out_visitor,
+    create_log_entry,
+    create_pre_approval,
+    deny_visitor,
+    get_active_pre_approvals,
+    get_pending_for_resident,
+    get_visitor_log_by_id,
+    get_visitor_logs,
+)
 from app.crud.crud_unit import (
     create_unit,
     create_units_bulk,
@@ -8,14 +20,18 @@ from app.crud.crud_unit import (
     update_unit,
 )
 from app.crud.crud_user import (
+    activate_user,
     assign_unit,
     authenticate_user,
     create_user,
     create_user_admin,
     deactivate_user,
+    get_societies_for_email,
     get_user_by_email,
     get_user_by_id,
+    get_user_by_invite_token,
     get_users,
+    regenerate_invite_token,
 )
 
 __all__ = [
@@ -32,8 +48,22 @@ __all__ = [
     "create_user_admin",
     "get_user_by_email",
     "get_user_by_id",
+    "get_user_by_invite_token",
     "get_users",
+    "get_societies_for_email",
     "authenticate_user",
+    "activate_user",
     "assign_unit",
     "deactivate_user",
+    "regenerate_invite_token",
+    "create_pre_approval",
+    "create_log_entry",
+    "get_visitor_log_by_id",
+    "get_visitor_logs",
+    "get_pending_for_resident",
+    "get_active_pre_approvals",
+    "approve_visitor",
+    "deny_visitor",
+    "check_in_visitor",
+    "check_out_visitor",
 ]

@@ -466,7 +466,260 @@ No code changes needed — the existing role hierarchy in `dependencies.py` alre
 
 ---
 
+---
+
+---
+
+## Session 5 — 2026-03-18
+
+### What We Did This Session
+
+**Society ID Shortening + Architecture & Auth Flow Redesign**
+
+Two major changes this session: replaced the long UUID society IDs with short 5-letter codes, and redesigned the overall product architecture and auth flow based on real-world SaaS patterns.
+
+---
+
+### Part 1: Society ID — UUID → 5-Letter Code
+
+**Problem:** Society IDs were UUIDs like `a1b2c3d4-e5f6-7890-abcd-ef1234567890` — too long and unwieldy for users to type or share.
+
+**Fix:** Society ID is now a random 5-uppercase-letter code (e.g. `MKQWZ`), generated on society registration with a uniqueness check.
+
+**Files changed (backend):**
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/models/society.py` | Modified | `id` column: `UUID` → `String(5)` |
+| `backend/app/models/user.py` | Modified | `society_id` FK: `UUID` → `String(5)` |
+| `backend/app/models/unit.py` | Modified | `society_id` FK: `UUID` → `String(5)` |
+| `backend/app/models/complaint.py` | Modified | `society_id` FK: `UUID` → `String(5)` |
+| `backend/app/schemas/society.py` | Modified | `SocietyResponse.id`: `uuid.UUID` → `str` |
+| `backend/app/schemas/user.py` | Modified | `UserResponse.society_id`: `uuid.UUID` → `str` |
+| `backend/app/schemas/unit.py` | Modified | `UnitResponse.society_id`: `uuid.UUID` → `str` |
+| `backend/app/crud/crud_society.py` | Modified | Added `_generate_society_code()` — random 5-letter code with DB uniqueness check. Changed type hints. |
+| `backend/app/crud/crud_user.py` | Modified | All `society_id: uuid.UUID` → `society_id: str` |
+| `backend/app/crud/crud_unit.py` | Modified | All `society_id: uuid.UUID` → `society_id: str` |
+| `backend/app/crud/crud_complaint.py` | Modified | All `society_id: uuid.UUID` → `society_id: str` |
+| `backend/app/api/v1/endpoints/auth.py` | Modified | `society_id` query param now validated as `^[A-Z]{5}$` via `Query()` |
+| `backend/app/api/dependencies.py` | Modified | Removed `uuid.UUID(society_id)` cast — society_id is now a plain string |
+| `backend/migrations/versions/3c7a1f9e0b44_society_id_to_5char_code.py` | Created | Migration: truncates all data, alters `societies.id` and all FK columns from UUID to VARCHAR(5) |
+
+**Note:** Migration truncated all existing test data. Re-register test societies after applying.
+
+---
+
+### Part 2: Architecture Redesign Decision
+
+**Problem:** The current setup has one Flutter app for everyone (admin + resident), and a confusing public self-registration flow where residents need to know the society code.
+
+**Decision:** Split into two frontends:
+
+| Frontend | Users | Purpose |
+|----------|-------|---------|
+| **Admin Web Portal** (React/Next.js) | Admin, Committee | Society setup, unit management, member invites, complaint oversight, billing, reports |
+| **Mobile App** (Flutter) | Residents, Support Staff | Activate via invite, file complaints, approve visitors, pay bills, book amenities |
+
+**Reasoning:**
+- Admin does heavy setup tasks (bulk units, member management) — better on desktop/web
+- Residents do quick daily tasks — better on mobile
+- This is the proven model used by Mygate, NoBroker Society, ADDA
+
+---
+
+### Part 3: Auth Flow Redesign Decision
+
+**Old flow (confusing):**
+```
+Register society → share UUID → anyone self-registers → first user = admin
+```
+
+**New flow (invite-based, to be implemented in Phase 5):**
+```
+1. Admin registers society → gets 5-letter code
+2. Admin logs into web portal
+3. Admin adds members → system generates invite token per member
+4. Resident receives invite (SMS/WhatsApp/email)
+5. Resident opens mobile app → enters invite token → sets password → activated
+6. Resident logs in with email + password (no society code needed)
+```
+
+**Key principle:** Residents never need to know the society code. Admin controls who joins.
+
+---
+
+### Part 4: Master Plan Updated
+
+Restructured `claude_master_plan.txt` with:
+- New architecture overview (two frontends, one backend)
+- Updated auth flow documentation
+- Updated setup guide (5-letter society code, correct DATABASE_URL)
+- Reorganised remaining phases:
+  - Phase 5: Auth Redesign (invite-based registration) — **NEXT**
+  - Phase 6: Admin Web Portal (React/Next.js)
+  - Phase 7: Mobile App Redesign (invite activation)
+  - Phase 8: Visitor & Security Management
+  - Phase 9: Maintenance & Payments
+  - Phase 10: Facility Booking & Polling
+  - Phase 11: Push Notifications
+
+---
+
+---
+
+### Part 5: Phase 5 Built — Invite-Based Auth System
+
+Replaced public self-registration with admin-controlled invite flow.
+
+#### New Auth Flow:
+```
+1. POST /auth/society/register → admin gets 5-letter code (unchanged)
+2. POST /auth/register → bootstrap-only: first user becomes ADMIN (unchanged)
+3. POST /members/ → admin creates member → gets invite_token in response (NEW)
+4. POST /auth/activate → resident sends invite_token + password → activated + JWT (NEW)
+5. POST /auth/lookup → resident sends email → gets list of societies they belong to (NEW)
+6. POST /members/{id}/reinvite → admin regenerates expired invite token (NEW)
+```
+
+#### Multi-Society User Support:
+A person can belong to multiple societies with the same email. The lookup endpoint returns all societies for that email. Mobile app uses this to show a society picker when there are multiple matches.
+
+#### Model Changes:
+- `users.is_activated` — Boolean, default True (self-registered admin = true, admin-created member = false)
+- `users.invite_token` — unique, URL-safe 22-char string, set on member creation, cleared on activation
+- `users.invite_expires_at` — 7 days from creation, checked during activation
+
+#### Key Design Decisions:
+- **`hashed_password = "!"`** for unactivated users — can never match a bcrypt hash, so login always fails until activation
+- **`is_activated` checked in `authenticate_user()`** — unactivated users can't login even if they guess a password
+- **Invite tokens expire after 7 days** — admin can regenerate via `/members/{id}/reinvite`
+- **`POST /auth/lookup` always returns 200** — even for unknown emails (returns empty list), to avoid email enumeration
+- **`AdminCreateUser` no longer takes `password`** — admin sets name, email, role, unit only; resident sets their own password during activation
+
+#### Files Created / Modified:
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/models/user.py` | Modified | Added `is_activated`, `invite_token`, `invite_expires_at` columns |
+| `backend/app/schemas/user.py` | Modified | Added `ActivateAccount`, `EmailLookup`, `MemberInviteResponse`, `SocietyLookupItem`, `SocietyLookupResponse`; removed `password` from `AdminCreateUser`; added `is_activated` to `UserResponse` |
+| `backend/app/schemas/__init__.py` | Modified | Exported new schemas |
+| `backend/app/crud/crud_user.py` | Modified | Added `get_user_by_invite_token()`, `get_societies_for_email()`, `activate_user()`, `regenerate_invite_token()`; updated `create_user_admin()` to generate invite token instead of requiring password; `authenticate_user()` now checks `is_activated` |
+| `backend/app/crud/__init__.py` | Modified | Exported new CRUD functions |
+| `backend/app/api/v1/endpoints/auth.py` | Modified | Added `POST /auth/activate` and `POST /auth/lookup`; updated docstrings |
+| `backend/app/api/v1/endpoints/members.py` | Modified | `POST /members/` now returns `MemberInviteResponse` with invite token; added `POST /members/{id}/reinvite` |
+| `backend/migrations/versions/5d8e2a1f7c03_add_invite_fields_to_users.py` | Created | Adds `is_activated`, `invite_token`, `invite_expires_at` to users table |
+
+---
+
+---
+
+### Part 6: Phase 6 Built — Admin Web Portal (Next.js)
+
+Built the full admin web portal using Next.js 16 + Tailwind CSS 4 + App Router.
+
+**Tech Stack:** Next.js 16.2.0, React 19, TypeScript, Tailwind CSS v4
+
+#### Project Structure:
+```
+web/
+  src/
+    lib/
+      types.ts          — shared TypeScript interfaces
+      api.ts            — fetch wrapper with JWT auth for all backend endpoints
+      auth-context.tsx   — React context for login/logout/auth state
+    components/
+      sidebar.tsx        — navigation sidebar (Dashboard, Units, Members, Complaints)
+      auth-guard.tsx     — redirect to /login if not authenticated
+    app/
+      layout.tsx         — root layout with AuthProvider
+      page.tsx           — redirects to /dashboard or /login
+      login/page.tsx     — admin login (society code + email + password)
+      (admin)/
+        layout.tsx       — shared sidebar layout for all admin pages
+        dashboard/page.tsx  — stats cards (units, members, complaints)
+        units/page.tsx      — table view with delete
+        units/new/page.tsx  — bulk unit creation form (add rows dynamically)
+        members/page.tsx    — table with role badges, invite status, reinvite/deactivate
+        members/new/page.tsx — create member form → shows invite token on success
+        complaints/page.tsx  — card list with status filters + status dropdown to update
+```
+
+#### Pages Built:
+| Page | Route | Features |
+|------|-------|----------|
+| Login | `/login` | Society code (5-letter), email, password |
+| Dashboard | `/dashboard` | Stat cards: total units, occupied, members, open complaints |
+| Units | `/units` | Table with block/floor/unit/type/area/status, delete button |
+| Add Units | `/units/new` | Dynamic row form, bulk create support |
+| Members | `/members` | Table with role badges, activation status, reinvite & deactivate actions |
+| Add Member | `/members/new` | Form with role dropdown + unit dropdown → shows invite token |
+| Complaints | `/complaints` | Card list with category/status badges, filter tabs, status update dropdown |
+
+#### Key Design Decisions:
+- **Route group `(admin)/`** — all authenticated pages share the sidebar layout
+- **JWT stored in localStorage** — simple for dev; production should use httpOnly cookies
+- **API client** — thin fetch wrapper in `api.ts`, auto-attaches Bearer token
+- **AuthGuard component** — redirects to `/login` if no token found
+- **`npm run build` — zero errors**
+
+#### Files Created:
+
+| File | Description |
+|------|-------------|
+| `web/` (entire directory) | Next.js 16 project with TypeScript + Tailwind v4 |
+| `web/src/lib/types.ts` | TypeScript interfaces for all backend models |
+| `web/src/lib/api.ts` | API client with all backend endpoint calls |
+| `web/src/lib/auth-context.tsx` | React auth context (login, logout, persist to localStorage) |
+| `web/src/components/sidebar.tsx` | Sidebar navigation with SVG icons |
+| `web/src/components/auth-guard.tsx` | Auth redirect guard |
+| `web/src/app/layout.tsx` | Root layout with AuthProvider |
+| `web/src/app/page.tsx` | Root redirect |
+| `web/src/app/login/page.tsx` | Admin login page |
+| `web/src/app/(admin)/layout.tsx` | Shared sidebar layout |
+| `web/src/app/(admin)/dashboard/page.tsx` | Dashboard stats |
+| `web/src/app/(admin)/units/page.tsx` | Units table |
+| `web/src/app/(admin)/units/new/page.tsx` | Bulk unit creation form |
+| `web/src/app/(admin)/members/page.tsx` | Members table with actions |
+| `web/src/app/(admin)/members/new/page.tsx` | Add member form |
+| `web/src/app/(admin)/complaints/page.tsx` | Complaints list with filters |
+
+---
+
+### Phase 7 Complete — Flutter Mobile Redesign (Invite-Based Auth)
+
+Finished the remaining Phase 7 work: activate screen, removed self-registration, cleaned up dashboard and routes.
+
+#### What was completed (Session 5 — earlier):
+- `frontend/lib/core/constants/api_constants.dart` — updated: removed `societyRegister`/`userRegister`, added `activate`/`lookup` endpoints
+- `frontend/lib/shared/models/user_model.dart` — updated: added `isActivated` field
+- `frontend/lib/features/auth/services/auth_service.dart` — rewritten: added `lookupSocieties()`, `activate()`, removed `register()`
+- `frontend/lib/features/auth/providers/auth_provider.dart` — rewritten: added `lookupSocieties()`, `activate()`, removed `register()`
+- `frontend/lib/features/auth/screens/login_screen.dart` — rewritten: 3-step flow (email → society picker → password)
+
+#### What was completed (Session 6):
+
+| File | Action | Description |
+|------|--------|-------------|
+| `frontend/lib/features/auth/screens/activate_screen.dart` | Created | Email + invite token + set password + confirm → auto-login on success |
+| `frontend/lib/features/auth/screens/register_screen.dart` | Deleted | Self-registration removed — residents activate via invite only |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Modified | Admin/committee see management tiles (Units, Members, Events placeholder); updated coming-soon phase numbers (8, 9, 10) |
+| `frontend/lib/main.dart` | Modified | Removed `/register` route; added `/activate` route; restored `/units`, `/units/new`, `/members/new` routes for admin/committee mobile access |
+| `backend/app/schemas/user.py` | Modified | Added `email` field to `ActivateAccount` schema |
+| `backend/app/api/v1/endpoints/auth.py` | Modified | Activate endpoint now verifies email matches the invite token's user |
+| `frontend/lib/features/auth/services/auth_service.dart` | Modified | `activate()` now sends email along with token and password |
+| `frontend/lib/features/auth/providers/auth_provider.dart` | Modified | `activate()` now requires email parameter |
+
+#### Key Design Decisions:
+- **Activate screen collects email** — user enters their email during activation so they know their login credentials; backend verifies email matches the invite token for security
+- **Admin/committee management on mobile** — Units and Members tiles shown for admin/committee roles; "Events & Scheduling" tile added as coming-soon placeholder
+- **Routes restored** — `/units`, `/units/new`, `/members/new` added back for admin/committee mobile use
+- **`flutter analyze` — zero issues**
+
+---
+
 ### 🚀 Start of Next Session — Pick Up Here
+
+**Phase 7 is COMPLETE. All phases through 7 are done.**
 
 **Before doing anything else:**
 
@@ -479,17 +732,215 @@ No code changes needed — the existing role hierarchy in `dependencies.py` alre
    cd /Users/masum/Development/Society/backend
    uvicorn app.main:app --reload --port 8000
    ```
-3. All migrations are applied. Database is ready.
+3. Start the admin web portal:
+   ```bash
+   cd /Users/masum/Development/Society/web
+   npm run dev
+   ```
+   Opens at http://localhost:3000
+4. All 5 migrations are applied. Database is ready but empty.
 
 **Then continue with:**
-> **Phase 5 — Visitor & Security Management (Full-Stack)**
+> **Phase 9 — Maintenance & Payments (Full-Stack)**
 
 ---
 
 ### Environment Notes
 
 - PostgreSQL 16 installed via Homebrew, running on localhost:5432
-- Database `society_db` created and all 3 migrations applied
+- Database `society_db` — all 6 migrations applied, data empty (need to re-register test data)
 - `.env` uses `postgresql://masum@localhost:5432/society_db` (no password, trust auth)
-- Server verified: health check, society registration, user registration (auto-admin), login, member creation all working
+- Society IDs are now 5-letter uppercase codes (e.g. `MKQWZ`)
+- Backend: `uvicorn app.main:app --reload --port 8000` from `backend/`
+- Web portal: `npm run dev` from `web/` → http://localhost:3000
+- `npm run build` — zero errors
+- `flutter analyze` — zero issues
+
+---
+
+---
+
+## Session 6 (continued) — 2026-03-18
+
+### Phase 8 Complete — Visitor & Security Management (Full-Stack)
+
+Built the complete visitor management system across backend, web portal, and mobile app.
+
+---
+
+### Part 1: Backend — VisitorLog Model & API
+
+#### Database Model: `visitor_logs`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| society_id | String(5) FK | Multi-tenant isolation |
+| unit_id | UUID FK | Which unit the visitor is visiting (nullable) |
+| resident_id | UUID FK | Which resident (nullable) |
+| visitor_name | String(200) | Required |
+| visitor_phone | String(20) | Nullable |
+| visitor_count | Integer | Default 1 |
+| purpose | Enum | guest, delivery, cab, service, other |
+| vehicle_number | String(20) | Nullable |
+| notes | Text | Nullable |
+| status | Enum | pre_approved, pending, approved, denied, checked_in, checked_out |
+| pre_approved_by_id | UUID FK | Nullable — resident who pre-approved |
+| checked_in_by_id | UUID FK | Nullable — staff who checked in |
+| expected_at | DateTime | Nullable — when visitor is expected |
+| checked_in_at | DateTime | Nullable |
+| checked_out_at | DateTime | Nullable |
+| created_at, updated_at | DateTime | Auto-managed |
+
+#### API Endpoints
+
+| Method | Path | Access | Description |
+|--------|------|--------|-------------|
+| POST | `/api/v1/visitors/pre-approve` | Any authenticated | Resident pre-approves a visitor |
+| POST | `/api/v1/visitors/log-entry` | Support Staff+ | Staff logs visitor arrival (PENDING status) |
+| GET | `/api/v1/visitors/` | Any authenticated | List visitors (RBAC: member sees own, staff/admin sees all) |
+| GET | `/api/v1/visitors/pending` | Any authenticated | Get visitors pending this resident's approval |
+| GET | `/api/v1/visitors/pre-approved` | Support Staff+ | All active pre-approvals |
+| GET | `/api/v1/visitors/{id}` | Any authenticated | Get single visitor detail |
+| PATCH | `/api/v1/visitors/{id}/approve` | Any authenticated | Resident approves pending visitor |
+| PATCH | `/api/v1/visitors/{id}/deny` | Any authenticated | Resident denies pending visitor |
+| PATCH | `/api/v1/visitors/{id}/check-in` | Support Staff+ | Check in pre-approved/approved visitor |
+| PATCH | `/api/v1/visitors/{id}/check-out` | Support Staff+ | Log visitor departure |
+
+#### Visitor Flow:
+```
+1. Resident pre-approves visitor → status: PRE_APPROVED
+2. Visitor arrives → staff checks in → status: CHECKED_IN
+3. Visitor leaves → staff checks out → status: CHECKED_OUT
+
+OR (walk-in without pre-approval):
+1. Visitor arrives → staff logs entry → status: PENDING
+2. Resident approves → status: APPROVED → staff checks in → CHECKED_IN
+   OR Resident denies → status: DENIED
+```
+
+---
+
+### Part 2: Admin Web Portal
+
+| Page | Route | Features |
+|------|-------|----------|
+| Dashboard | `/dashboard` | Added "Visitors Inside" and "Pending Approvals" stat cards |
+| Visitors | `/visitors` | Full table with status/purpose badges, filter tabs, check-in/check-out actions |
+| Sidebar | — | Added "Visitors" nav item with shield icon |
+
+---
+
+### Part 3: Flutter Mobile App
+
+**Screens built:**
+
+| Screen | Route | For | Features |
+|--------|-------|-----|----------|
+| Visitors List | `/visitors` | Resident | View all visitors with status badges, pull-to-refresh, pending notification badge |
+| Pre-approve | `/visitors/pre-approve` | Resident | Form: name, phone, purpose, count, vehicle, notes |
+| Pending Approvals | `/visitors/pending` | Resident | Approve/deny visitor cards |
+| Gate Dashboard | `/visitors/gate` | Support Staff | Tabbed view: "Inside" + "Pre-approved" with check-in/check-out buttons |
+| Log Entry | `/visitors/log-entry` | Support Staff | Form to log walk-in visitor arrival |
+
+**Dashboard updated:**
+- **Residents/Admin/Committee** → "Visitors" tile (links to visitors list)
+- **Support Staff** → "Gate Dashboard" tile (links to gate dashboard)
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/models/visitor.py` | Created | `VisitorLog` model, `VisitPurpose` + `VisitStatus` enums |
+| `backend/app/models/__init__.py` | Modified | Exported `VisitorLog`, `VisitPurpose`, `VisitStatus` |
+| `backend/app/db/base.py` | Modified | Registered `VisitorLog` for Alembic |
+| `backend/migrations/versions/2bf19aeb2704_create_visitor_logs_table.py` | Created | Migration: creates `visitor_logs` table with indexes |
+| `backend/app/schemas/visitor.py` | Created | `VisitorPreApprove`, `VisitorLogEntry`, `VisitorStatusUpdate`, `VisitorResponse` |
+| `backend/app/schemas/__init__.py` | Modified | Exported visitor schemas |
+| `backend/app/crud/crud_visitor.py` | Created | Full CRUD: create, list, approve, deny, check-in, check-out |
+| `backend/app/crud/__init__.py` | Modified | Exported visitor CRUD functions |
+| `backend/app/api/v1/endpoints/visitors.py` | Created | 10 endpoints for full visitor lifecycle |
+| `backend/app/api/v1/__init__.py` | Modified | Mounted visitors router |
+| `web/src/lib/types.ts` | Modified | Added `VisitorLog`, `VisitPurpose`, `VisitStatus` interfaces |
+| `web/src/lib/api.ts` | Modified | Added visitor API methods |
+| `web/src/components/sidebar.tsx` | Modified | Added "Visitors" nav item |
+| `web/src/app/(admin)/visitors/page.tsx` | Created | Visitor log table with filters + actions |
+| `web/src/app/(admin)/dashboard/page.tsx` | Modified | Added visitor stat cards |
+| `frontend/lib/core/constants/api_constants.dart` | Modified | Added visitor endpoint paths |
+| `frontend/lib/shared/models/visitor_model.dart` | Created | `VisitorModel` with status helpers |
+| `frontend/lib/features/visitors/services/visitor_service.dart` | Created | Dio calls for all visitor endpoints |
+| `frontend/lib/features/visitors/providers/visitor_provider.dart` | Created | `VisitorState` + `VisitorNotifier` (Riverpod) |
+| `frontend/lib/features/visitors/screens/visitors_list_screen.dart` | Created | Visitor list with status badges + pending badge |
+| `frontend/lib/features/visitors/screens/pre_approve_screen.dart` | Created | Pre-approve form |
+| `frontend/lib/features/visitors/screens/pending_approvals_screen.dart` | Created | Approve/deny pending visitors |
+| `frontend/lib/features/visitors/screens/staff_dashboard_screen.dart` | Created | Gate dashboard: Inside + Pre-approved tabs |
+| `frontend/lib/features/visitors/screens/log_entry_screen.dart` | Created | Staff log entry form |
+| `frontend/lib/main.dart` | Modified | Added 5 visitor routes |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Modified | Visitor tile live; support staff gets Gate Dashboard tile |
+
+---
+
+### Key Design Decisions
+
+- **RBAC on list endpoint**: Members see only their own visitors; staff/admin/committee see all
+- **Status machine**: `pre_approved → checked_in → checked_out` or `pending → approved → checked_in → checked_out`
+- **Support staff gate dashboard**: Tabbed view optimized for quick check-in/check-out at the gate
+- **Residents never need to interact with support staff flow** — they pre-approve and the system handles the rest
+- **`flutter analyze` — zero issues**
+- **`npm run build` — zero errors**
+
+---
+
+### Enhancement Added to Master Plan: Bulk Excel Import (Phase 8.5)
+
+Added a new phase to the master plan for bulk importing units and members via Excel/CSV files:
+- `POST /api/v1/units/import` — upload Excel with unit rows, bulk create in one transaction
+- `POST /api/v1/members/import` — upload Excel with member rows, auto-generate invite tokens
+- Web portal: import buttons on Units and Members pages with preview table
+- Mobile: same import capability for admin/committee
+- Template downloads for correct column headers
+
+---
+
+### Start of Next Session — Pick Up Here
+
+**Phase 8 is COMPLETE. All phases through 8 are done.**
+
+**Before doing anything else:**
+
+1. Start PostgreSQL:
+   ```bash
+   brew services start postgresql@16
+   ```
+2. Run migrations (6 total — includes visitor_logs table):
+   ```bash
+   cd /Users/masum/Development/Society/backend
+   alembic upgrade head
+   ```
+3. Start the backend server:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+4. Start the admin web portal:
+   ```bash
+   cd /Users/masum/Development/Society/web
+   npm run dev
+   ```
+
+**Then continue with:**
+> **Phase 8.5 — Bulk Excel Import for Units & Members**
+
+---
+
+### Environment Notes
+
+- PostgreSQL 16 via Homebrew, localhost:5432
+- Database `society_db` — 6 migrations applied
+- Society IDs: 5-letter uppercase codes (e.g. `MKQWZ`)
+- Backend: `uvicorn app.main:app --reload --port 8000`
+- Web portal: `npm run dev` from `web/` → http://localhost:3000
+- Flutter: `flutter run` from `frontend/`
+- `npm run build` — zero errors
 - `flutter analyze` — zero issues
