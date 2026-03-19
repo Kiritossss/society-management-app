@@ -42,7 +42,12 @@ def create_log_entry(
     staff_id: uuid.UUID,
     data: VisitorLogEntry,
 ) -> VisitorLog:
-    """Support staff logs a visitor arrival. If no pre-approval exists, status is PENDING."""
+    """Support staff logs a visitor arrival.
+
+    If a resident is specified, status is PENDING (awaiting resident approval).
+    If no resident (walk-in: cab, delivery, etc.), status is CHECKED_IN directly.
+    """
+    is_walk_in = data.resident_id is None and data.unit_id is None
     visitor = VisitorLog(
         society_id=society_id,
         unit_id=data.unit_id,
@@ -53,7 +58,7 @@ def create_log_entry(
         purpose=data.purpose,
         vehicle_number=data.vehicle_number,
         notes=data.notes,
-        status=VisitStatus.PENDING,
+        status=VisitStatus.CHECKED_IN if is_walk_in else VisitStatus.PENDING,
         checked_in_by_id=staff_id,
         checked_in_at=datetime.now(timezone.utc),
     )
@@ -153,6 +158,11 @@ def check_in_visitor(
     db.commit()
     db.refresh(visitor)
     return visitor
+
+
+def delete_visitor(db: Session, visitor: VisitorLog) -> None:
+    db.delete(visitor)
+    db.commit()
 
 
 def check_out_visitor(db: Session, visitor: VisitorLog) -> VisitorLog:

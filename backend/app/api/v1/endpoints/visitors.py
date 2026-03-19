@@ -10,6 +10,7 @@ from app.crud.crud_visitor import (
     check_out_visitor,
     create_log_entry,
     create_pre_approval,
+    delete_visitor,
     deny_visitor,
     get_active_pre_approvals,
     get_pending_for_resident,
@@ -175,7 +176,7 @@ def check_in(
     if not visitor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visitor log not found")
 
-    allowed = {VisitStatus.PRE_APPROVED, VisitStatus.APPROVED}
+    allowed = {VisitStatus.PRE_APPROVED, VisitStatus.APPROVED, VisitStatus.PENDING}
     if visitor.status not in allowed:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -203,3 +204,16 @@ def check_out(
         )
 
     return check_out_visitor(db, visitor)
+
+
+@router.delete("/{visitor_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_visitor(
+    visitor_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_support_staff),
+):
+    """Admin or support staff can delete a visitor log entry."""
+    visitor = get_visitor_log_by_id(db, current_user.society_id, visitor_id)
+    if not visitor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visitor log not found")
+    delete_visitor(db, visitor)

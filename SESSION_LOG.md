@@ -984,9 +984,175 @@ Idea: when admin bulk-imports members, invite tokens should be auto-sent to each
 
 ---
 
+## Session 5 — 2026-03-19
+
+### Bug Fixes — Pre-Phase 9
+
+Fixed four bugs reported by user before starting Phase 9 work.
+
+---
+
+### Bug 1: Complaints Not Posting from Mobile App
+
+**Root Cause:** Two issues compounding:
+
+1. **Auth interceptor race condition** — `_AuthInterceptor.onRequest()` was declared `async` with a `void` return type. The caller couldn't await it, so requests were sent before the auth token was read from secure storage. Result: 401 Unauthorized on every protected endpoint.
+2. **Complaint schema type mismatch** (see Bug 3 below) — even if auth succeeded, the response would fail serialization.
+
+**Fix:** Changed return type from `void` to `Future<void>` in the interceptor's `onRequest` method.
+
+**File:** `frontend/lib/core/network/api_client.dart` (line 47)
+
+---
+
+### Bug 2: Visitor Check-Out Not Visible on Staff Dashboard
+
+**Root Cause:** The backend check-out endpoint worked correctly (`PATCH /api/v1/visitors/{id}/check-out`), and the Flutter service/provider code called it properly. However, the staff dashboard only had two tabs: "Inside" (checked_in) and "Pre-approved". After a visitor was checked out, their status changed to `checked_out` and they disappeared from both tabs — no visual confirmation.
+
+**Fix:**
+- Added `isCheckedOut` getter to `VisitorModel`
+- Added a third "Checked Out" tab to the staff dashboard showing exited visitors with their departure time
+
+**Files:**
+| File | Change |
+|------|--------|
+| `frontend/lib/shared/models/visitor_model.dart` | Added `isCheckedOut` getter |
+| `frontend/lib/features/visitors/screens/staff_dashboard_screen.dart` | Added third tab, `_buildCheckedOutList()` method, `_formatTime()` helper |
+
+---
+
+### Bug 3: Dashboard Not Showing Complaints + Admin Can't Update Complaint Status
+
+**Root Cause:** `ComplaintResponse` schema defined `society_id` as `uuid.UUID`, but the actual model stores it as `String(5)` (the 5-letter society code). Pydantic failed to serialize the response on every complaint endpoint — listing, creating, and status updates all returned 500 errors.
+
+**Fix:** Changed `society_id: uuid.UUID` to `society_id: str` in the response schema.
+
+**File:** `backend/app/schemas/complaint.py` (line 52)
+
+---
+
+### Bug 4: Images in Complaints — Deferred
+
+User acknowledged image upload can be addressed later. No changes made.
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `frontend/lib/core/network/api_client.dart` | Modified | Fixed async interceptor: `void` → `Future<void>` return type |
+| `frontend/lib/shared/models/visitor_model.dart` | Modified | Added `isCheckedOut` getter |
+| `frontend/lib/features/visitors/screens/staff_dashboard_screen.dart` | Modified | Added "Checked Out" tab with exit time display |
+| `backend/app/schemas/complaint.py` | Modified | Fixed `society_id` type: `uuid.UUID` → `str` |
+
+---
+
+### Bug 5: Walk-In Visitors (Cab, Delivery) Not Showing on Staff Dashboard
+
+**Root Cause:** `create_log_entry()` always set status to `PENDING`, even for walk-in visitors with no `resident_id`. Since there's no resident to approve them, they were stuck in `PENDING` forever — invisible on the "Inside" tab, impossible to check out.
+
+This also caused the admin dashboard's "Visitors Inside" counter to stay at 0.
+
+**Fix (2 parts):**
+
+1. **Auto-check-in walk-ins** — In `create_log_entry()`, if no `resident_id` and no `unit_id` are provided (walk-in visitor), status is set to `CHECKED_IN` directly. Visitors assigned to a specific resident still go to `PENDING` for approval.
+2. **Allow staff to check in PENDING visitors** — The check-in endpoint now also accepts `PENDING` status (previously only `PRE_APPROVED` and `APPROVED`). This lets staff force-check-in a visitor whose resident hasn't responded.
+
+**Files:**
+| File | Change |
+|------|--------|
+| `backend/app/crud/crud_visitor.py` | `create_log_entry()` — walk-in → `CHECKED_IN`, resident-assigned → `PENDING` |
+| `backend/app/api/v1/endpoints/visitors.py` | Check-in endpoint now allows `PENDING` status |
+
+---
+
+### Bug 6: Dashboard Showing All Zeros
+
+**Root Cause:** Dashboard called `api.getVisitors(0, 200)` but the backend visitors endpoint caps `limit` at `le=100`. The `limit=200` caused a 422 validation error. Since all 4 API calls were in a `Promise.all`, one failure killed all stats — everything showed 0.
+
+**Fix (2 parts):**
+1. Changed `limit` from 200 to 100 for the visitors call
+2. Made each API call individually resilient with `.catch(() => [])` so one failure doesn't zero out everything
+
+**File:** `web/src/app/(admin)/dashboard/page.tsx`
+
+---
+
+### Feature: Delete Buttons for Visitors and Complaints
+
+Added ability to delete finished visitor records and resolved/closed complaints to prevent log buildup.
+
+**Backend:**
+- `DELETE /api/v1/complaints/{id}` — Committee/Admin only
+- `DELETE /api/v1/visitors/{id}` — Support staff/Admin only
+
+**Admin Web Portal:**
+- Complaints page: "Delete" button appears on resolved/closed complaints
+- Visitors page: "Delete" button appears on checked-out/denied visitors
+
+**Mobile (Staff Dashboard):**
+- "Delete" button on each checked-out visitor card
+
+**Files:**
+| File | Change |
+|------|--------|
+| `backend/app/crud/crud_complaint.py` | Added `delete_complaint()` |
+| `backend/app/api/v1/endpoints/complaints.py` | Added `DELETE /{id}` endpoint |
+| `backend/app/crud/crud_visitor.py` | Added `delete_visitor()` |
+| `backend/app/api/v1/endpoints/visitors.py` | Added `DELETE /{id}` endpoint |
+| `web/src/lib/api.ts` | Added `deleteVisitor()`, `deleteComplaint()` methods |
+| `web/src/app/(admin)/visitors/page.tsx` | Delete button on checked-out/denied visitors |
+| `web/src/app/(admin)/complaints/page.tsx` | Delete button on resolved/closed complaints |
+| `web/src/app/(admin)/dashboard/page.tsx` | Fixed limit=200 → 100, resilient Promise.all |
+| `frontend/lib/features/visitors/services/visitor_service.dart` | Added `deleteVisitor()` |
+| `frontend/lib/features/visitors/providers/visitor_provider.dart` | Added `deleteVisitor()` |
+| `frontend/lib/features/visitors/screens/staff_dashboard_screen.dart` | Delete button on checked-out tab |
+
+---
+
+### Feature: Committee Complaint Management on Mobile App
+
+Committee members and admins can now manage complaints directly from the Flutter mobile app — status updates and deletion, same as the web portal.
+
+**Changes:**
+- Complaint cards show a status dropdown and delete button for committee/admin users
+- Regular members still see read-only complaint cards (no change)
+- Delete shows a confirmation dialog; only available on resolved/closed complaints
+- Role detection via `authProvider.token?.user.role`
+
+**Files:**
+| File | Change |
+|------|--------|
+| `frontend/lib/features/complaints/services/complaint_service.dart` | Added `deleteComplaint()` method |
+| `frontend/lib/features/complaints/providers/complaint_provider.dart` | Added `deleteComplaint()` notifier method |
+| `frontend/lib/features/complaints/screens/complaints_list_screen.dart` | Added `_isCommittee()` helper, status dropdown + delete button on complaint cards for committee/admin |
+
+---
+
+### Master Plan Restructured
+
+Reordered remaining phases based on user priority. Maintenance & Payments moved to last feature phase (before security). Added Phase 9 with 6 quality-of-life features. Security hardening is now Phase 13 (final).
+
+**New Phase Order:**
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 9 | Quality of Life — Notice Board, Comments, Profiles, Directory, Search | Next |
+| 10 | Facility Booking & Polling | Pending |
+| 11 | Push Notifications, SMS & WhatsApp | Pending |
+| 12 | Maintenance & Payments | Pending (last feature phase) |
+| 13 | Security Hardening & Production Readiness | Pending (final) |
+
+**Files Modified:**
+| File | Change |
+|------|--------|
+| `claude_master_plan.txt` | Restructured phases 9-13, added Phase 9 sub-features (9A-9F), moved Payments to Phase 12, added Phase 13 security details |
+
+---
+
 ### Start of Next Session — Pick Up Here
 
-**Phase 8.5 is COMPLETE. All phases through 8.5 are done.**
+**All bug fixes complete. All phases through 8.5 are done.**
 
 **Before doing anything else:**
 
@@ -1010,7 +1176,7 @@ Idea: when admin bulk-imports members, invite tokens should be auto-sent to each
    ```
 
 **Then continue with:**
-> **Phase 9 — Maintenance & Payments (Full-Stack)**
+> **Phase 9 — Quality of Life Features (start with 9A: Notice Board)**
 
 ---
 

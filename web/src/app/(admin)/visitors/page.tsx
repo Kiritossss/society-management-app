@@ -58,6 +58,16 @@ export default function VisitorsPage() {
     }
   }
 
+  async function handleDeleteVisitor(id: string) {
+    if (!confirm("Delete this visitor record?")) return;
+    try {
+      await api.deleteVisitor(id);
+      setVisitors((prev) => prev.filter((v) => v.id !== id));
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Delete failed");
+    }
+  }
+
   const filtered =
     filter === "all"
       ? visitors
@@ -177,6 +187,14 @@ export default function VisitorsPage() {
                           className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                         >
                           Check Out
+                        </button>
+                      )}
+                      {(v.status === "checked_out" || v.status === "denied") && (
+                        <button
+                          onClick={() => handleDeleteVisitor(v.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                        >
+                          Delete
                         </button>
                       )}
                     </div>

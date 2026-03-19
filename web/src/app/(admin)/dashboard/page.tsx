@@ -19,32 +19,27 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      try {
-        const [units, members, complaints, visitors] = await Promise.all([
-          api.getUnits(),
-          api.getMembers(),
-          api.getComplaints(),
-          api.getVisitors(0, 200),
-        ]);
-        setStats({
-          units: units.length,
-          members: members.length,
-          openComplaints: complaints.filter(
-            (c: Complaint) => c.status === "open" || c.status === "in_progress"
-          ).length,
-          occupiedUnits: units.filter((u: Unit) => u.is_occupied).length,
-          visitorsInside: visitors.filter(
-            (v: VisitorLog) => v.status === "checked_in"
-          ).length,
-          pendingApprovals: visitors.filter(
-            (v: VisitorLog) => v.status === "pending"
-          ).length,
-        });
-      } catch {
-        // If API fails, keep zeros
-      } finally {
-        setLoading(false);
-      }
+      const [units, members, complaints, visitors] = await Promise.all([
+        api.getUnits().catch(() => [] as Unit[]),
+        api.getMembers().catch(() => [] as import("@/lib/types").User[]),
+        api.getComplaints().catch(() => [] as Complaint[]),
+        api.getVisitors(0, 100).catch(() => [] as VisitorLog[]),
+      ]);
+      setStats({
+        units: units.length,
+        members: members.length,
+        openComplaints: complaints.filter(
+          (c: Complaint) => c.status === "open" || c.status === "in_progress"
+        ).length,
+        occupiedUnits: units.filter((u: Unit) => u.is_occupied).length,
+        visitorsInside: visitors.filter(
+          (v: VisitorLog) => v.status === "checked_in"
+        ).length,
+        pendingApprovals: visitors.filter(
+          (v: VisitorLog) => v.status === "pending"
+        ).length,
+      });
+      setLoading(false);
     }
     load();
   }, []);

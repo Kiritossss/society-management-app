@@ -98,6 +98,19 @@ class ComplaintNotifier extends StateNotifier<ComplaintState> {
       );
     }
   }
+
+  Future<void> deleteComplaint(String complaintId) async {
+    try {
+      await _service.deleteComplaint(complaintId);
+      state = state.copyWith(
+        complaints: state.complaints.where((c) => c.id != complaintId).toList(),
+      );
+    } catch (_) {
+      state = state.copyWith(
+        errorMessage: 'Failed to delete complaint.',
+      );
+    }
+  }
 }
 
 // ── Providers ─────────────────────────────────────────────────────────────────

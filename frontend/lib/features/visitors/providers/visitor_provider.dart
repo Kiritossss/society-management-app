@@ -179,6 +179,17 @@ class VisitorNotifier extends StateNotifier<VisitorState> {
     }
   }
 
+  Future<void> deleteVisitor(String id) async {
+    try {
+      await _service.deleteVisitor(id);
+      state = state.copyWith(
+        visitors: state.visitors.where((v) => v.id != id).toList(),
+      );
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Failed to delete visitor.');
+    }
+  }
+
   void _replaceVisitor(VisitorModel updated) {
     state = state.copyWith(
       visitors: state.visitors.map((v) => v.id == updated.id ? updated : v).toList(),

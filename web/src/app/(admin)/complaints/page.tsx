@@ -39,6 +39,16 @@ export default function ComplaintsPage() {
     }
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this complaint?")) return;
+    try {
+      await api.deleteComplaint(id);
+      setComplaints((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Delete failed");
+    }
+  }
+
   const filtered =
     filter === "all"
       ? complaints
@@ -120,6 +130,14 @@ export default function ComplaintsPage() {
                       </option>
                     ))}
                   </select>
+                  {(c.status === "resolved" || c.status === "closed") && (
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

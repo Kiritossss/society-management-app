@@ -65,4 +65,5 @@ class VisitorModel {
   bool get isPending => status == 'pending';
   bool get isPreApproved => status == 'pre_approved';
   bool get isCheckedIn => status == 'checked_in';
+  bool get isCheckedOut => status == 'checked_out';
 }

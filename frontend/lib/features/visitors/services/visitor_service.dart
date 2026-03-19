@@ -100,4 +100,8 @@ class VisitorService {
     final response = await _dio.patch('${ApiConstants.visitors}/$visitorId/check-out');
     return VisitorModel.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<void> deleteVisitor(String visitorId) async {
+    await _dio.delete('${ApiConstants.visitors}/$visitorId');
+  }
 }

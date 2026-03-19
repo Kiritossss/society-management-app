@@ -46,4 +46,8 @@ class ComplaintService {
     );
     return ComplaintModel.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<void> deleteComplaint(String complaintId) async {
+    await _dio.delete('/api/v1/complaints/$complaintId');
+  }
 }

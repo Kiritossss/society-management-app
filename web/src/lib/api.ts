@@ -172,6 +172,9 @@ export const api = {
       { method: "PATCH" }
     );
   },
+  deleteVisitor(id: string) {
+    return request<void>(`/api/v1/visitors/${id}`, { method: "DELETE" });
+  },
 
   // Complaints
   getComplaints(skip = 0, limit = 100) {
@@ -184,6 +187,9 @@ export const api = {
       `/api/v1/complaints/${id}/status`,
       { method: "PATCH", body: JSON.stringify({ status }) }
     );
+  },
+  deleteComplaint(id: string) {
+    return request<void>(`/api/v1/complaints/${id}`, { method: "DELETE" });
   },
 };
 

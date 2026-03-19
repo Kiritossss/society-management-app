@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user, require_committee
 from app.crud.crud_complaint import (
     create_complaint,
+    delete_complaint,
     get_complaint_by_id,
     get_complaints,
     update_complaint_status,
@@ -84,3 +85,16 @@ def update_status(
     if not complaint:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Complaint not found")
     return update_complaint_status(db, complaint, data)
+
+
+@router.delete("/{complaint_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_complaint(
+    complaint_id: uuid.UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_committee)],
+):
+    """Only Committee/Admin can delete a complaint."""
+    complaint = get_complaint_by_id(db, current_user.society_id, complaint_id)
+    if not complaint:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Complaint not found")
+    delete_complaint(db, complaint)

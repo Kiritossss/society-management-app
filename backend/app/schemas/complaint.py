@@ -49,7 +49,7 @@ class ComplaintResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: uuid.UUID
-    society_id: uuid.UUID
+    society_id: str
     raised_by_id: uuid.UUID
     title: str
     description: str

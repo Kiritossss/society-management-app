@@ -63,6 +63,11 @@ def get_complaint_by_id(
     )
 
 
+def delete_complaint(db: Session, complaint: Complaint) -> None:
+    db.delete(complaint)
+    db.commit()
+
+
 def update_complaint_status(
     db: Session,
     complaint: Complaint,

@@ -143,9 +143,11 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
 | 7 | Mobile App Redesign — Invite Activation Flow | Done |
 | 8 | Visitor & Security Management (full-stack) | Done |
 | 8.5 | Bulk Excel Import — Units & Members (Web Portal) | Done |
-| 9 | Maintenance & Payments (full-stack) | Pending |
+| 9 | Quality of Life — Notice Board, Comments, Profiles, Directory, Search | Pending |
 | 10 | Facility Booking & Polling (full-stack) | Pending |
-| 11 | Push Notifications | Pending |
+| 11 | Push Notifications, SMS & WhatsApp | Pending |
+| 12 | Maintenance & Payments (full-stack) | Pending |
+| 13 | Security Hardening & Production Readiness | Pending |
 
 ---
 
@@ -271,12 +273,37 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
 2. **Members page** — "Import from Excel" button → file picker → preview table → confirm → shows invite tokens
 3. **Template download** — provide downloadable Excel templates with correct column headers
 
-## Phase 9: Maintenance & Payments (Full-Stack)
-1. **Backend**:
-    - Create `Bill` and `Payment` models.
-    - Build billing endpoints to auto-generate society dues.
-2. **Admin Web Portal**: Billing dashboard, generate bills, payment status tracking.
-3. **Mobile (Resident)**: View dues, make payments (Stripe/Razorpay stub).
+## Phase 9: Quality of Life — Features & Polish
+**Objective**: Make the app feel complete with everyday features residents and admins actually need.
+
+### 9A: Notice Board / Announcements
+- **Backend**: `Announcement` model (title, body, posted_by, priority, created_at). CRUD endpoints — admin/committee create, all members read.
+- **Admin Web Portal**: Announcements page — create, edit, delete notices.
+- **Mobile**: Announcements list on dashboard, tap to view full notice. Badge for unread.
+
+### 9B: Complaint Comments / Replies
+- **Backend**: `ComplaintComment` model (complaint_id, user_id, body, created_at). Endpoints to add/list comments on a complaint.
+- **Admin Web Portal**: Comment thread under each complaint on the complaints page.
+- **Mobile**: Complaint detail screen with comment thread. Both committee and the complaint raiser can reply.
+
+### 9C: Resident Profile Screen
+- **Mobile**: Profile screen showing user info (name, email, unit, role), their complaints, their visitor history. Accessible from dashboard.
+- **Admin Web Portal**: Member detail view when clicking a member row.
+
+### 9D: Emergency Contacts / Society Directory
+- **Backend**: `EmergencyContact` model (name, phone, role/label, society_id). Admin CRUD.
+- **Admin Web Portal**: Directory management page.
+- **Mobile**: "Emergency / Directory" tile on dashboard — list of contacts with tap-to-call.
+
+### 9E: Dashboard Activity Feed
+- **Admin Web Portal**: Replace static number cards with a live recent-activity feed (new complaints, visitor check-ins, new members, announcements). Keep the stat cards but add a feed below.
+- **Mobile**: Activity feed on resident dashboard showing recent events in their society.
+
+### 9F: Search & Filter Everywhere
+- **Admin Web Portal**: Add search bars to Members, Units, Complaints, and Visitors pages. Filter by status, role, date range.
+- **Mobile**: Search on complaints list, visitor list.
+
+---
 
 ## Phase 10: Facility Booking & Polling (Full-Stack)
 1. **Facility Booking**: Amenity reservations with conflict detection.
@@ -294,3 +321,36 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
    - On member creation (single or bulk import), auto-send invite token to member's phone
    - Message template: society name + activation link + invite token
    - WhatsApp preferred (free for users); SMS as fallback
+
+## Phase 12: Maintenance & Payments (Full-Stack)
+**Objective**: Billing, dues tracking, and payment processing.
+1. **Backend**:
+    - Create `Bill` and `Payment` models.
+    - Build billing endpoints to auto-generate society dues.
+    - Payment gateway integration stub (Stripe/Razorpay).
+2. **Admin Web Portal**: Billing dashboard, generate bills, payment status tracking, overdue alerts.
+3. **Mobile (Resident)**: View dues, payment history, make payments (gateway stub).
+
+## Phase 13: Security Hardening & Production Readiness
+**Objective**: Lock down the app for real-world deployment.
+
+### Critical (Must-have before production)
+1. **Web portal: httpOnly cookie auth** — Replace localStorage JWT with secure httpOnly cookies (prevents XSS token theft)
+2. **HTTPS enforcement** — Configure TLS everywhere; Flutter API base URL via env config, web portal enforces HTTPS redirects
+3. **Security headers** — Add CSP, X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy to `next.config.ts`
+4. **File upload size limits** — Cap Excel/CSV imports at 5MB; reject oversized files before reading into memory
+5. **Next.js middleware** — Server-side token validation, CSRF protection, request logging
+6. **CORS whitelist** — Replace `allow_origins=["*"]` with explicit production domains
+
+### High Priority
+7. **Audit logging** — `AuditLog` model tracking who did what, when (member creation, visitor check-in, complaint updates, unit changes)
+8. **Refresh tokens** — Issue long-lived refresh token + short-lived access token; auto-renew without re-login
+9. **Login rate limiting** — Stricter limits on auth endpoints (e.g., 5 failed attempts → 15-min lockout)
+10. **SSRF protection** — Validate `image_url` against private/loopback IP ranges
+
+### Medium Priority
+11. **PII encryption at rest** — Encrypt phone numbers, emails in database using Fernet or similar
+12. **Token blacklist** — Redis-backed revocation list for immediate user deactivation
+13. **SSL certificate pinning** — Pin backend cert in Flutter for MITM protection
+14. **Dependency audit** — Run `pip-audit` and `npm audit`, fix vulnerabilities, pin versions
+15. **Disable debug logging in production** — Strip request/response body logging from Flutter release builds

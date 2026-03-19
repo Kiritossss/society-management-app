@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/complaint_model.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/complaint_provider.dart';
 
 class ComplaintsListScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,11 @@ class _ComplaintsListScreenState extends ConsumerState<ComplaintsListScreen> {
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(complaintProvider.notifier).loadComplaints());
+  }
+
+  bool _isCommittee(WidgetRef ref) {
+    final role = ref.watch(authProvider).token?.user.role;
+    return role == 'admin' || role == 'committee';
   }
 
   @override
@@ -65,7 +71,10 @@ class _ComplaintsListScreenState extends ConsumerState<ComplaintsListScreen> {
                   itemCount: state.complaints.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) =>
-                      _ComplaintCard(complaint: state.complaints[i]),
+                      _ComplaintCard(
+                        complaint: state.complaints[i],
+                        isCommittee: _isCommittee(ref),
+                      ),
                 ),
               ),
       },
@@ -73,12 +82,20 @@ class _ComplaintsListScreenState extends ConsumerState<ComplaintsListScreen> {
   }
 }
 
-class _ComplaintCard extends StatelessWidget {
+class _ComplaintCard extends ConsumerWidget {
   final ComplaintModel complaint;
-  const _ComplaintCard({required this.complaint});
+  final bool isCommittee;
+  const _ComplaintCard({required this.complaint, required this.isCommittee});
+
+  static const _statusOptions = [
+    (ComplaintStatus.open, 'Open'),
+    (ComplaintStatus.inProgress, 'In Progress'),
+    (ComplaintStatus.resolved, 'Resolved'),
+    (ComplaintStatus.closed, 'Closed'),
+  ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -116,6 +133,68 @@ class _ComplaintCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (isCommittee) ...[
+              const Divider(height: 20),
+              Row(
+                children: [
+                  const Text('Status:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 32,
+                      child: DropdownButtonFormField<String>(
+                        value: complaint.status,
+                        isDense: true,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                        items: _statusOptions.map((s) => DropdownMenuItem(
+                          value: s.$1,
+                          child: Text(s.$2),
+                        )).toList(),
+                        onChanged: (value) {
+                          if (value != null && value != complaint.status) {
+                            ref.read(complaintProvider.notifier).updateStatus(complaint.id, value);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (complaint.status == ComplaintStatus.resolved ||
+                      complaint.status == ComplaintStatus.closed)
+                    SizedBox(
+                      height: 32,
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Delete Complaint'),
+                              content: const Text('Are you sure you want to delete this complaint?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            ref.read(complaintProvider.notifier).deleteComplaint(complaint.id);
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                        label: const Text('Delete', style: TextStyle(fontSize: 12, color: AppColors.error)),
+                        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
