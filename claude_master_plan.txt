@@ -142,7 +142,7 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
 | 6 | Admin Web Portal (React/Next.js) | Done |
 | 7 | Mobile App Redesign — Invite Activation Flow | Done |
 | 8 | Visitor & Security Management (full-stack) | Done |
-| 8.5 | Bulk Excel Import — Units & Members | Pending |
+| 8.5 | Bulk Excel Import — Units & Members (Web Portal) | Done |
 | 9 | Maintenance & Payments (full-stack) | Pending |
 | 10 | Facility Booking & Polling (full-stack) | Pending |
 | 11 | Push Notifications | Pending |
@@ -270,9 +270,6 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
 1. **Units page** — "Import from Excel" button → file picker → preview table → confirm → bulk create
 2. **Members page** — "Import from Excel" button → file picker → preview table → confirm → shows invite tokens
 3. **Template download** — provide downloadable Excel templates with correct column headers
-
-### Mobile (Admin/Committee):
-1. Same import buttons on Units and Members screens (file picker via `file_picker` Flutter package)
 
 ## Phase 9: Maintenance & Payments (Full-Stack)
 1. **Backend**:

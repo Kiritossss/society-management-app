@@ -37,6 +37,38 @@ async function request<T>(
   return res.json();
 }
 
+interface ImportResult {
+  created: number;
+  errors: number;
+  details: Array<Record<string, string>>;
+  error_details: Array<{ row: number; error: string }>;
+}
+
+async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(body.detail || res.statusText, res.status);
+  }
+  return res.json();
+}
+
 // Auth
 export const api = {
   // Auth
@@ -80,6 +112,9 @@ export const api = {
   deleteUnit(id: string) {
     return request<void>(`/api/v1/units/${id}`, { method: "DELETE" });
   },
+  importUnits(file: File) {
+    return uploadFile<ImportResult>("/api/v1/units/import", file);
+  },
 
   // Members
   getMembers(skip = 0, limit = 100) {
@@ -109,6 +144,9 @@ export const api = {
       `/api/v1/members/${userId}/deactivate`,
       { method: "PATCH" }
     );
+  },
+  importMembers(file: File) {
+    return uploadFile<ImportResult>("/api/v1/members/import", file);
   },
 
   // Visitors

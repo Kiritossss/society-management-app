@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const roleBadge: Record<string, string> = {
   admin: "bg-purple-100 text-purple-700",
@@ -17,9 +19,28 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.getMembers().then(setMembers).finally(() => setLoading(false));
-  }, []);
+  // Import state
+  const [showImport, setShowImport] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    created: number;
+    errors: number;
+    details: Array<Record<string, string>>;
+    error_details: Array<{ row: number; error: string }>;
+  } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function load() {
+    try {
+      setMembers(await api.getMembers());
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
 
   async function handleReinvite(userId: string) {
     try {
@@ -40,6 +61,29 @@ export default function MembersPage() {
     }
   }
 
+  async function handleImport() {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const result = await api.importMembers(file);
+      setImportResult(result);
+      if (result.created > 0) {
+        load();
+      }
+    } catch (err) {
+      setImportResult({
+        created: 0,
+        errors: 1,
+        details: [],
+        error_details: [{ row: 0, error: err instanceof ApiError ? err.message : "Import failed" }],
+      });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -47,13 +91,106 @@ export default function MembersPage() {
           <h1 className="text-2xl font-bold">Members</h1>
           <p className="text-muted text-sm">Manage residents and staff</p>
         </div>
-        <Link
-          href="/members/new"
-          className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
-        >
-          + Add Member
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setShowImport(!showImport); setImportResult(null); }}
+            className="border border-primary text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors"
+          >
+            Import from File
+          </button>
+          <Link
+            href="/members/new"
+            className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+          >
+            + Add Member
+          </Link>
+        </div>
       </div>
+
+      {/* Import Panel */}
+      {showImport && (
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
+          <h2 className="font-semibold mb-3">Import Members from Excel / CSV</h2>
+          <p className="text-sm text-muted mb-4">
+            Upload a <strong>.xlsx</strong> or <strong>.csv</strong> file with columns:
+            <code className="bg-gray-100 px-1 mx-1 rounded text-xs">full_name</code>,
+            <code className="bg-gray-100 px-1 mx-1 rounded text-xs">email</code> (required),
+            <code className="bg-gray-100 px-1 mx-1 rounded text-xs">role</code> (default: member),
+            <code className="bg-gray-100 px-1 mx-1 rounded text-xs">unit_number</code>.
+          </p>
+
+          <div className="flex items-center gap-4 mb-4">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.csv"
+              className="text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-sm file:font-medium file:cursor-pointer"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              {importing ? "Importing..." : "Upload & Import"}
+            </button>
+            <a
+              href={`${API_BASE}/api/v1/members/import/template`}
+              className="text-primary text-sm hover:underline"
+            >
+              Download template
+            </a>
+          </div>
+
+          {importResult && (
+            <div className={`rounded-lg p-4 text-sm ${importResult.errors > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"}`}>
+              <p className="font-medium mb-1">
+                {importResult.created} member{importResult.created !== 1 ? "s" : ""} created
+                {importResult.errors > 0 && `, ${importResult.errors} error${importResult.errors !== 1 ? "s" : ""}`}
+              </p>
+
+              {/* Show invite tokens for created members */}
+              {importResult.details.length > 0 && (
+                <div className="mt-3 bg-white border border-green-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-green-50">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">Name</th>
+                        <th className="text-left px-3 py-2 font-medium">Email</th>
+                        <th className="text-left px-3 py-2 font-medium">Invite Token</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-green-100">
+                      {importResult.details.map((d, i) => (
+                        <tr key={i}>
+                          <td className="px-3 py-2">{d.full_name}</td>
+                          <td className="px-3 py-2 text-muted">{d.email}</td>
+                          <td className="px-3 py-2 font-mono">
+                            {d.invite_token}
+                            <button
+                              onClick={() => navigator.clipboard.writeText(d.invite_token)}
+                              className="ml-2 text-primary hover:underline"
+                            >
+                              Copy
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {importResult.error_details.length > 0 && (
+                <ul className="mt-2 space-y-1 text-red-600">
+                  {importResult.error_details.map((e, i) => (
+                    <li key={i}>Row {e.row}: {e.error}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {inviteToken && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">

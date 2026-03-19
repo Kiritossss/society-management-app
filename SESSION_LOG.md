@@ -893,20 +893,84 @@ OR (walk-in without pre-approval):
 
 ---
 
-### Enhancement Added to Master Plan: Bulk Excel Import (Phase 8.5)
+---
 
-Added a new phase to the master plan for bulk importing units and members via Excel/CSV files:
-- `POST /api/v1/units/import` — upload Excel with unit rows, bulk create in one transaction
-- `POST /api/v1/members/import` — upload Excel with member rows, auto-generate invite tokens
-- Web portal: import buttons on Units and Members pages with preview table
-- Mobile: same import capability for admin/committee
-- Template downloads for correct column headers
+## Session 7 — 2026-03-19
+
+### Phase 8.5 Complete — Bulk Excel/CSV Import (Backend + Web Portal)
+
+Built bulk import for units and members via Excel (.xlsx) or CSV file upload. Web portal only — mobile import was intentionally excluded (bulk spreadsheet import is a desktop task, not mobile).
+
+---
+
+### Part 1: Backend — Import Endpoints
+
+#### New Endpoints
+
+| Method | Path | Access | Description |
+|--------|------|--------|-------------|
+| POST | `/api/v1/units/import` | Admin | Upload .xlsx/.csv → bulk create units (max 500 rows) |
+| GET | `/api/v1/units/import/template` | Public | Download CSV template with sample rows |
+| POST | `/api/v1/members/import` | Admin | Upload .xlsx/.csv → bulk create members with invite tokens (max 500 rows) |
+| GET | `/api/v1/members/import/template` | Public | Download CSV template with sample rows |
+
+#### Unit Import Columns
+- `unit_number` (required), `block_name`, `floor_number`, `unit_type`, `area_sqft`
+
+#### Member Import Columns
+- `full_name`, `email` (required), `role` (default: member), `unit_number` (matches existing unit)
+
+#### Key Design Decisions
+- **Row-level error handling** — each row validated individually; valid rows are created, invalid rows reported with specific error messages
+- **No all-or-nothing transaction** — partial imports succeed with error report (better UX for large files)
+- **Duplicate detection** — unit imports catch unique constraint violations; member imports check email uniqueness before creating
+- **Unit matching for members** — pre-loads all society units into a map, matches by `unit_number` (with optional `block_name|unit_number` compound key)
+- **File format validation** — only `.xlsx` and `.csv` accepted; rejects other formats with clear error
+- **`openpyxl`** added to `requirements.txt` for Excel parsing
+
+---
+
+### Part 2: Admin Web Portal
+
+#### Units Page (`/units`)
+- New "Import from File" button (outline style, next to "+ Add Units")
+- Expandable import panel: file picker (.xlsx/.csv), "Upload & Import" button, "Download template" link
+- Result display: green panel on success, yellow panel with row-level errors listed
+
+#### Members Page (`/members`)
+- Same "Import from File" button and expandable panel
+- Result display includes a table of created members with their invite tokens + copy buttons
+- Row-level errors shown below the success table
+
+#### API Client (`api.ts`)
+- Added `uploadFile<T>()` helper for multipart form-data uploads (separate from JSON `request()`)
+- Added `api.importUnits(file)` and `api.importMembers(file)` methods
+
+---
+
+### Part 3: Decision — No Mobile Import
+
+User decided bulk Excel/CSV import should only be on the web portal — not on mobile. Reasoning: admins do bulk data entry on desktop, not from a phone. Mobile admin features (units, members) remain for individual add/edit only.
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/requirements.txt` | Modified | Added `openpyxl>=3.1.0` |
+| `backend/app/api/v1/endpoints/units.py` | Modified | Added `POST /import`, `GET /import/template` endpoints with Excel/CSV parsing |
+| `backend/app/api/v1/endpoints/members.py` | Modified | Added `POST /import`, `GET /import/template` endpoints with unit matching + invite token generation |
+| `web/src/lib/api.ts` | Modified | Added `uploadFile()` helper, `importUnits()`, `importMembers()` methods |
+| `web/src/app/(admin)/units/page.tsx` | Modified | Added import panel with file picker, results display |
+| `web/src/app/(admin)/members/page.tsx` | Modified | Added import panel with file picker, invite token table |
+| `claude_master_plan.txt` | Modified | Updated Phase 8.5 — removed mobile import section |
 
 ---
 
 ### Start of Next Session — Pick Up Here
 
-**Phase 8 is COMPLETE. All phases through 8 are done.**
+**Phase 8.5 is COMPLETE. All phases through 8.5 are done.**
 
 **Before doing anything else:**
 
@@ -914,7 +978,7 @@ Added a new phase to the master plan for bulk importing units and members via Ex
    ```bash
    brew services start postgresql@16
    ```
-2. Run migrations (6 total — includes visitor_logs table):
+2. Run migrations (6 total):
    ```bash
    cd /Users/masum/Development/Society/backend
    alembic upgrade head
@@ -930,7 +994,7 @@ Added a new phase to the master plan for bulk importing units and members via Ex
    ```
 
 **Then continue with:**
-> **Phase 8.5 — Bulk Excel Import for Units & Members**
+> **Phase 9 — Maintenance & Payments (Full-Stack)**
 
 ---
 
