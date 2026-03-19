@@ -954,17 +954,33 @@ User decided bulk Excel/CSV import should only be on the web portal — not on m
 
 ---
 
+### Part 4: Bug Fix — Excel Cell Type Handling
+
+Initial import had parsing bugs: openpyxl returns raw Python types (int, float, None) from cells, not strings. This caused `'int' object has no attribute` errors.
+
+**Fix:** Added `_cell_to_str()` helper that safely converts any cell value to a stripped string. All rows are now pre-processed through this before field-level parsing. Empty rows at the end of spreadsheets are automatically skipped.
+
+---
+
 ### Files Created / Modified
 
 | File | Action | Description |
 |------|--------|-------------|
 | `backend/requirements.txt` | Modified | Added `openpyxl>=3.1.0` |
-| `backend/app/api/v1/endpoints/units.py` | Modified | Added `POST /import`, `GET /import/template` endpoints with Excel/CSV parsing |
-| `backend/app/api/v1/endpoints/members.py` | Modified | Added `POST /import`, `GET /import/template` endpoints with unit matching + invite token generation |
+| `backend/app/api/v1/endpoints/units.py` | Modified | Added `POST /import`, `GET /import/template` endpoints; fixed cell type handling |
+| `backend/app/api/v1/endpoints/members.py` | Modified | Added `POST /import`, `GET /import/template` endpoints; fixed cell type handling |
 | `web/src/lib/api.ts` | Modified | Added `uploadFile()` helper, `importUnits()`, `importMembers()` methods |
 | `web/src/app/(admin)/units/page.tsx` | Modified | Added import panel with file picker, results display |
 | `web/src/app/(admin)/members/page.tsx` | Modified | Added import panel with file picker, invite token table |
-| `claude_master_plan.txt` | Modified | Updated Phase 8.5 — removed mobile import section |
+| `claude_master_plan.txt` | Modified | Updated Phase 8.5 done; removed mobile import section |
+
+---
+
+### Planned Enhancement: Auto-Send Invite Tokens via SMS/WhatsApp
+
+**Deferred to Phase 11 (Push Notifications).**
+
+Idea: when admin bulk-imports members, invite tokens should be auto-sent to each member's phone via WhatsApp or SMS (Twilio). Requires adding `phone_number` to User model and member import. This avoids manually sharing tokens one by one.
 
 ---
 

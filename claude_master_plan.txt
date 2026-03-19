@@ -283,7 +283,14 @@ API docs (Swagger UI) available at: http://localhost:8000/docs
 2. **Polling/Voting**: Democratic decision-making — create polls, cast votes, view results.
 3. Both available on web portal (admin creates) and mobile (residents participate).
 
-## Phase 11: Polish & Push Notifications
-1. **Backend**: Setup Firebase Admin SDK in FastAPI to send FCM push messages on events (new visitor, new complaint, bill generated, poll created).
-2. **Mobile**: Integrate Firebase Cloud Messaging in Flutter.
-3. **Web Portal**: Toast/badge notifications for admin.
+## Phase 11: Notifications — Push, SMS & WhatsApp
+1. **Push Notifications (Firebase)**:
+   - Backend: Setup Firebase Admin SDK in FastAPI to send FCM push messages on events (new visitor, new complaint, bill generated, poll created).
+   - Mobile: Integrate Firebase Cloud Messaging in Flutter.
+   - Web Portal: Toast/badge notifications for admin.
+2. **SMS/WhatsApp Invite Delivery (Twilio)**:
+   - Add `phone_number` field to User model + member import Excel columns
+   - Integrate Twilio WhatsApp Business API or Twilio SMS
+   - On member creation (single or bulk import), auto-send invite token to member's phone
+   - Message template: society name + activation link + invite token
+   - WhatsApp preferred (free for users); SMS as fallback
