@@ -39,6 +39,9 @@ frontend/.pub-cache/
 frontend/.pub/
 frontend/pubspec.lock
 
+# Uploads (user-generated content)
+backend/uploads/
+
 # Testing
 .coverage
 htmlcov/

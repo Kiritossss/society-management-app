@@ -66,6 +66,21 @@ export interface VisitorLog {
   updated_at: string;
 }
 
+export type NoticePriority = "normal" | "important" | "urgent";
+
+export interface Notice {
+  id: string;
+  society_id: string;
+  posted_by_id: string;
+  title: string;
+  body: string;
+  priority: NoticePriority;
+  is_pinned: boolean;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Complaint {
   id: string;
   society_id: string;
@@ -78,4 +93,13 @@ export interface Complaint {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ComplaintComment {
+  id: string;
+  complaint_id: string;
+  user_id: string;
+  user_name: string;
+  body: string;
+  created_at: string;
 }

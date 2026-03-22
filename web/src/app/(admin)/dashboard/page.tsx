@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Unit, Complaint, VisitorLog } from "@/lib/types";
+import type { Unit, Complaint, VisitorLog, Notice } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
 export default function DashboardPage() {
@@ -14,16 +14,18 @@ export default function DashboardPage() {
     occupiedUnits: 0,
     visitorsInside: 0,
     pendingApprovals: 0,
+    activeNotices: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [units, members, complaints, visitors] = await Promise.all([
+      const [units, members, complaints, visitors, notices] = await Promise.all([
         api.getUnits().catch(() => [] as Unit[]),
         api.getMembers().catch(() => [] as import("@/lib/types").User[]),
         api.getComplaints().catch(() => [] as Complaint[]),
         api.getVisitors(0, 100).catch(() => [] as VisitorLog[]),
+        api.getNotices().catch(() => [] as Notice[]),
       ]);
       setStats({
         units: units.length,
@@ -38,6 +40,7 @@ export default function DashboardPage() {
         pendingApprovals: visitors.filter(
           (v: VisitorLog) => v.status === "pending"
         ).length,
+        activeNotices: notices.length,
       });
       setLoading(false);
     }
@@ -51,6 +54,7 @@ export default function DashboardPage() {
     { label: "Open Complaints", value: stats.openComplaints, color: "bg-orange-500" },
     { label: "Visitors Inside", value: stats.visitorsInside, color: "bg-emerald-500" },
     { label: "Pending Approvals", value: stats.pendingApprovals, color: "bg-yellow-500" },
+    { label: "Active Notices", value: stats.activeNotices, color: "bg-purple-500" },
   ];
 
   return (

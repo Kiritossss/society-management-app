@@ -1,3 +1,10 @@
+from app.crud.crud_notice import (
+    create_notice,
+    delete_notice,
+    get_notice_by_id,
+    get_notices,
+    update_notice,
+)
 from app.crud.crud_society import create_society, get_society_by_email, get_society_by_id
 from app.crud.crud_visitor import (
     approve_visitor,
@@ -66,4 +73,9 @@ __all__ = [
     "deny_visitor",
     "check_in_visitor",
     "check_out_visitor",
+    "create_notice",
+    "get_notices",
+    "get_notice_by_id",
+    "update_notice",
+    "delete_notice",
 ]

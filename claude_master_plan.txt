@@ -4,7 +4,7 @@ This guide is designed to be fed into Claude (or any AI) session-by-session to b
 
 **Instructions for the AI:**
 - Only execute ONE phase at a time. Do not attempt to build the whole app in one prompt.
-- At the start of a phase, read this file, along with `/Users/masum/Development/Society/rules.md`.
+- At the start of a phase, read this file, along with `/Users/masum/Development/Society/CLAUDE.md`.
 
 ---
 

@@ -26,6 +26,9 @@ class ApiConstants {
   static const String visitorPending = '$apiVersion/visitors/pending';
   static const String visitorPreApproved = '$apiVersion/visitors/pre-approved';
 
+  // Notices
+  static const String notices = '$apiVersion/notices';
+
   // Timeouts
   static const int connectTimeout = 10000; // ms
   static const int receiveTimeout = 15000;

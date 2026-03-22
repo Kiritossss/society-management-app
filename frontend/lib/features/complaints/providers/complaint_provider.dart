@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/models/complaint_comment_model.dart';
 import '../../../shared/models/complaint_model.dart';
 import '../services/complaint_service.dart';
 
@@ -121,4 +122,77 @@ final complaintServiceProvider =
 final complaintProvider =
     StateNotifierProvider<ComplaintNotifier, ComplaintState>(
   (ref) => ComplaintNotifier(ref.read(complaintServiceProvider)),
+);
+
+// ── Comment State & Notifier ─────────────────────────────────────────────────
+
+class CommentState {
+  final List<ComplaintCommentModel> comments;
+  final bool isLoading;
+  final String? errorMessage;
+
+  const CommentState({
+    this.comments = const [],
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  CommentState copyWith({
+    List<ComplaintCommentModel>? comments,
+    bool? isLoading,
+    String? errorMessage,
+  }) =>
+      CommentState(
+        comments: comments ?? this.comments,
+        isLoading: isLoading ?? this.isLoading,
+        errorMessage: errorMessage ?? this.errorMessage,
+      );
+}
+
+class CommentNotifier extends StateNotifier<CommentState> {
+  final ComplaintService _service;
+  final String complaintId;
+
+  CommentNotifier(this._service, this.complaintId) : super(const CommentState());
+
+  Future<void> loadComments() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final comments = await _service.getComments(complaintId);
+      state = state.copyWith(isLoading: false, comments: comments);
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load comments.',
+      );
+    }
+  }
+
+  Future<bool> addComment(String body) async {
+    try {
+      final comment = await _service.addComment(complaintId, body);
+      state = state.copyWith(comments: [...state.comments, comment]);
+      return true;
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Failed to add comment.');
+      return false;
+    }
+  }
+
+  Future<void> deleteComment(String commentId) async {
+    try {
+      await _service.deleteComment(complaintId, commentId);
+      state = state.copyWith(
+        comments: state.comments.where((c) => c.id != commentId).toList(),
+      );
+    } catch (_) {
+      state = state.copyWith(errorMessage: 'Failed to delete comment.');
+    }
+  }
+}
+
+final commentProvider =
+    StateNotifierProvider.family<CommentNotifier, CommentState, String>(
+  (ref, complaintId) =>
+      CommentNotifier(ref.read(complaintServiceProvider), complaintId),
 );

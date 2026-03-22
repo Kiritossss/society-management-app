@@ -26,6 +26,9 @@ dependencies:
   # Local preferences (society_id, etc.)
   shared_preferences: ^2.3.2
 
+  # Image picker
+  image_picker: ^1.1.2
+
   # UI utilities
   cupertino_icons: ^1.0.8
   loading_animation_widget: ^1.2.0+4

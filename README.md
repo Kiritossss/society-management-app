@@ -4,11 +4,14 @@ A multi-tenant SaaS platform for managing residential societies. Built with **Fa
 
 ## Features
 
-- **Complaint Management** — Issue tracking with status updates
-- **Visitor & Security Management** — Gatekeepers log and verify visitor entry
-- **Maintenance & Payments** — Auto-generated bills and online payment integration
-- **Facility Booking** — Conflict-free amenity reservations
-- **Polling & Voting** — Democratic decision-making tools for residents
+- **Complaint Management** — Issue tracking with status updates, comments/replies
+- **Visitor & Security Management** — Gate logging, pre-approvals, check-in/out, walk-ins
+- **Notice Board** — Society-wide announcements with image attachments
+- **Bulk Import** — Excel/CSV import for units and members (web portal)
+- **Admin Web Portal** — Next.js dashboard for admin/committee management
+- **Facility Booking** — Conflict-free amenity reservations *(coming soon)*
+- **Polling & Voting** — Democratic decision-making tools *(coming soon)*
+- **Maintenance & Payments** — Auto-generated bills and payment integration *(coming soon)*
 
 ---
 
@@ -25,18 +28,23 @@ Society Management App
 │   │   ├── models/   # ORM models
 │   │   ├── schemas/  # Pydantic request/response schemas
 │   │   └── main.py   # FastAPI app entry point
-│   ├── migrations/   # Alembic migrations
+│   ├── migrations/   # Alembic migrations (9 total)
 │   └── requirements.txt
+├── web/              # Next.js admin web portal
+│   └── src/
+│       ├── app/      # App router pages
+│       ├── components/ # Shared components
+│       └── lib/      # API client, types, utils
 └── frontend/         # Flutter mobile app
     └── lib/
         ├── core/     # Theme, constants, API client
-        ├── features/ # Feature modules (auth, complaints, etc.)
-        └── shared/   # Shared widgets & utilities
+        ├── features/ # Feature modules (auth, complaints, notices, visitors)
+        └── shared/   # Shared models, widgets & utilities
 ```
 
 ---
 
-## Core Principles (from `rules.md`)
+## Core Principles (from `CLAUDE.md`)
 
 | Rule | Implementation |
 |------|---------------|
@@ -111,13 +119,19 @@ flutter run
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Database & Core Setup (models, Alembic) | ✅ Complete |
-| 2 | Authentication & Multi-Tenancy (JWT, RBAC) | ✅ Complete |
-| 3 | Flutter App Foundation | ✅ Complete |
+| 1–3 | Database, Auth, Multi-Tenancy, Flutter Foundation | ✅ Complete |
 | 4 | Complaint Management (full-stack) | ✅ Complete |
-| 5 | Visitor & Security Management (full-stack) | ⏳ Pending |
-| 6 | Maintenance & Payments (full-stack) | ⏳ Pending |
-| 7 | Push Notifications (Firebase FCM) | ⏳ Pending |
+| 4.5 | Unit Model, Member Management | ✅ Complete |
+| 5–7 | Invite Auth, Admin Web Portal, Mobile Redesign | ✅ Complete |
+| 8 | Visitor & Security Management | ✅ Complete |
+| 8.5 | Bulk Excel/CSV Import (Web Portal) | ✅ Complete |
+| 9A | Notice Board with Image Attachments | ✅ Complete |
+| 9B | Complaint Comments / Replies | ✅ Complete |
+| 9C–F | Profiles, Directory, Activity Feed, Search | ⏳ Next |
+| 10 | Facility Booking & Polling | ⏳ Pending |
+| 11 | Push Notifications, SMS & WhatsApp | ⏳ Pending |
+| 12 | Maintenance & Payments | ⏳ Pending |
+| 13 | Security Hardening & Production Readiness | ⏳ Pending |
 
 See [SESSION_LOG.md](SESSION_LOG.md) for a detailed log of every development session.
 

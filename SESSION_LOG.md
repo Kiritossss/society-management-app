@@ -1,6 +1,182 @@
-# Society Management App — Session Log
+<h1 align="center">Society Management App — Session Log</h1>
 
-This file tracks everything done across all development sessions. Update it at the start and end of every session, and whenever files are added, modified, or removed.
+<p align="center">
+  <strong>Full development history across all sessions. Updated whenever files are added, modified, or removed.</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Web-Next.js_16-000000?style=flat-square" alt="Next.js">
+  <img src="https://img.shields.io/badge/Mobile-Flutter-02569B?style=flat-square" alt="Flutter">
+  <img src="https://img.shields.io/badge/DB-PostgreSQL_16-4169E1?style=flat-square" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Phase-9B_of_13-blueviolet?style=flat-square" alt="Progress">
+</p>
+
+---
+
+## Phase Progress
+
+| Phase | Description | Session | Status |
+|:-----:|-------------|:-------:|:------:|
+| 1 | Database & Core Setup | 1 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 2 | Authentication & Multi-Tenancy | 1 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 3 | Flutter App Foundation | 1 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 4 | Complaint Management (Full-Stack) | 1 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 4.5 | Unit Model, Member Management, Bug Fixes | 3–4 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 5 | Invite-Based Auth System | 5 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 6 | Admin Web Portal (Next.js) | 5 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 7 | Flutter Mobile Redesign (Invite Auth) | 5 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 8 | Visitor & Security Management | 6 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 8.5 | Bulk Excel/CSV Import (Web Portal) | 7 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| — | Bug Fixes & Delete Features | 8 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 9A | Notice Board / Announcements | 9 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 9A+ | Notice Images + Mobile Management | 10 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 9B | Complaint Comments / Replies | 11 | ![done](https://img.shields.io/badge/-Done-success?style=flat-square) |
+| 9C–F | Profiles, Directory, Activity Feed, Search | — | ![next](https://img.shields.io/badge/-Next-blue?style=flat-square) |
+| 10 | Facility Booking & Polling | — | ![pending](https://img.shields.io/badge/-Pending-lightgrey?style=flat-square) |
+| 11 | Push Notifications, SMS & WhatsApp | — | ![pending](https://img.shields.io/badge/-Pending-lightgrey?style=flat-square) |
+| 12 | Maintenance & Payments | — | ![pending](https://img.shields.io/badge/-Pending-lightgrey?style=flat-square) |
+| 13 | Security Hardening & Production Readiness | — | ![pending](https://img.shields.io/badge/-Pending-lightgrey?style=flat-square) |
+
+---
+
+## Session Index
+
+<details>
+<summary><strong>Session 1 — 2026-03-14</strong> &nbsp; <em>Phases 1–4 (Foundation → Complaints)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 1: Database & Core Setup](#phase-completed-phase-1--database--core-setup-backend) | Models, migrations, FastAPI bootstrap |
+| [Phase 2: Auth & Multi-Tenancy](#session-1-continued--phase-2-authentication--multi-tenancy) | JWT, RBAC, login/register endpoints |
+| [Bug Fix: Circular Import](#bug-fix-circular-import-discovered-during-startup-check) | `db/base.py` → `db/base_class.py` split |
+| [Phase 3: Flutter App Foundation](#session-1-continued--phase-3-flutter-app-foundation) | Theme, networking, auth screens |
+| [Phase 4: Complaint Management](#session-1-continued--phase-4-complaint-management-full-stack) | Complaint model, API, Flutter UI |
+| [Deferred: Society Registration UI](#session-1--deferred-discussion-society-registration-ui) | Option A vs B discussion |
+
+</details>
+
+<details>
+<summary><strong>Session 2 — 2026-03-15</strong> &nbsp; <em>Master Plan Updates</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Master Plan Updates](#session-2--2026-03-15) | Setup guide, login walkthrough, progress table |
+
+</details>
+
+<details>
+<summary><strong>Session 3 — 2026-03-15</strong> &nbsp; <em>Phase 4.5 (Audit + Units + Members)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Part 1: Bug Fixes (audit)](#part-1-bug-fixes-from-audit) | Role escalation, pagination, SSRF, async interceptor |
+| [Part 2: Unit Model](#part-2-unit-model--society-layout-structure) | Flexible block/floor/unit with COALESCE index |
+| [Part 3: Backend Endpoints](#part-3-new-backend-endpoints) | Unit CRUD + member management APIs |
+| [Part 4: Frontend (Flutter)](#part-4-frontend-flutter) | Unit & member screens, dashboard tiles |
+
+</details>
+
+<details>
+<summary><strong>Session 4 — 2026-03-15</strong> &nbsp; <em>Migration + Bootstrap Fix</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Part 1: Database Migration](#part-1-database-migration-units-table--userunit_id) | `.env` fix, 3 migrations applied |
+| [Part 2: First-Admin Bootstrap Fix](#part-2-first-admin-bootstrap-fix) | First user auto-becomes ADMIN |
+| [Part 3: Role System Clarification](#part-3-role-system-clarification) | Admin / committee / member / support_staff permissions |
+
+</details>
+
+<details>
+<summary><strong>Session 5 — 2026-03-18</strong> &nbsp; <em>Phases 5–7 (Redesign + Invite Auth + Web Portal + Mobile)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Part 1: Society ID → 5-Letter Code](#part-1-society-id--uuid--5-letter-code) | UUID replaced with short codes |
+| [Part 2: Architecture Redesign](#part-2-architecture-redesign-decision) | Split into web portal + mobile app |
+| [Part 3: Auth Flow Redesign](#part-3-auth-flow-redesign-decision) | Invite-based registration |
+| [Part 4: Master Plan Updated](#part-4-master-plan-updated) | Restructured phases |
+| [Part 5: Phase 5 — Invite Auth](#part-5-phase-5-built--invite-based-auth-system) | Invite tokens, activation, email lookup |
+| [Part 6: Phase 6 — Admin Web Portal](#part-6-phase-6-built--admin-web-portal-nextjs) | Next.js 16, all admin pages |
+| [Phase 7: Flutter Mobile Redesign](#phase-7-complete--flutter-mobile-redesign-invite-based-auth) | Activate screen, removed self-registration |
+
+</details>
+
+<details>
+<summary><strong>Session 6 — 2026-03-18</strong> &nbsp; <em>Phase 8 (Visitor & Security Management)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 8: Visitor & Security Management](#phase-8-complete--visitor--security-management-full-stack) | Visitor model, web + mobile UI, gate dashboard |
+
+</details>
+
+<details>
+<summary><strong>Session 7 — 2026-03-19</strong> &nbsp; <em>Phase 8.5 (Bulk Import)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 8.5: Bulk Excel/CSV Import](#phase-85-complete--bulk-excelcsv-import-backend--web-portal) | Upload endpoints, web import panels, templates |
+
+</details>
+
+<details>
+<summary><strong>Session 8 — 2026-03-19</strong> &nbsp; <em>Bug Fixes + Delete Features + Plan Restructure</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Bug 1: Complaints Not Posting from Mobile](#bug-1-complaints-not-posting-from-mobile-app) | Async interceptor return type |
+| [Bug 2: Visitor Check-Out Not Visible](#bug-2-visitor-check-out-not-visible-on-staff-dashboard) | Added "Checked Out" tab |
+| [Bug 3: Dashboard Not Showing Complaints](#bug-3-dashboard-not-showing-complaints--admin-cant-update-complaint-status) | `society_id` type mismatch |
+| [Bug 4: Images in Complaints](#bug-4-images-in-complaints--deferred) | Deferred |
+| [Bug 5: Walk-In Visitors Not Showing](#bug-5-walk-in-visitors-cab-delivery-not-showing-on-staff-dashboard) | Auto-check-in walk-ins |
+| [Bug 6: Dashboard Showing All Zeros](#bug-6-dashboard-showing-all-zeros) | Limit cap + resilient `Promise.all` |
+| [Feature: Delete Buttons](#feature-delete-buttons-for-visitors-and-complaints) | Delete visitors + complaints (web + mobile) |
+| [Feature: Committee Complaints on Mobile](#feature-committee-complaint-management-on-mobile-app) | Status dropdown + delete for committee |
+| [Master Plan Restructured](#master-plan-restructured) | Reordered phases 9–13 |
+
+</details>
+
+<details>
+<summary><strong>Session 9 — 2026-03-22</strong> &nbsp; <em>Phase 9A (Notice Board) + Housekeeping</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 9A: Notice Board](#phase-9a-complete--notice-board--announcements-full-stack) | Notice model, API, web portal pages, mobile screen |
+| [Housekeeping](#part-4-housekeeping) | `rules.md` → `CLAUDE.md`, restyled SESSION_LOG + CLAUDE.md |
+| [Login Bug Fix](#login-bug-fix-passlib--bcrypt-500-incompatibility) | Replaced passlib with direct bcrypt (Python 3.13 fix) |
+
+</details>
+
+<details>
+<summary><strong>Session 10 — 2026-03-22</strong> &nbsp; <em>Phase 9A+ (Notice Images + Mobile Notice Management)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 9A+: Notice Images + Mobile Management](#phase-9a-enhancement--notice-images--mobile-notice-management) | Image upload, committee create/delete on mobile, image display |
+
+</details>
+
+<details>
+<summary><strong>Session 11 — 2026-03-22</strong> &nbsp; <em>Phase 9B (Complaint Comments / Replies)</em></summary>
+<br>
+
+| Section | What Changed |
+|---------|-------------|
+| [Phase 9B: Complaint Comments](#phase-9b-complete--complaint-comments--replies) | Comment model, API endpoints, web portal comment thread, Flutter detail screen with comments |
+
+</details>
 
 ---
 
@@ -16,7 +192,7 @@ This file tracks everything done across all development sessions. Update it at t
 
 | File | Action | Description |
 |------|--------|-------------|
-| `rules.md` | Read | Core rules & security principles governing the entire app |
+| `CLAUDE.md` | Read | Core rules & security principles governing the entire app (renamed from `rules.md`) |
 | `claude_master_plan.txt` | Read | 7-phase development plan |
 | `backend/requirements.txt` | Created | All Python dependencies (FastAPI, SQLAlchemy, Alembic, JWT, bcrypt, slowapi) |
 | `backend/app/core/config.py` | Created | Pydantic `Settings` class — reads from `.env`: DB URL, JWT secret, rate limit |
@@ -35,9 +211,9 @@ This file tracks everything done across all development sessions. Update it at t
 ### Key Design Decisions
 
 - **UUID primary keys** on all tables (non-guessable, secure)
-- **`society_id` FK on every `User`** — enforces multi-tenant data isolation per `rules.md`
+- **`society_id` FK on every `User`** — enforces multi-tenant data isolation per `CLAUDE.md`
 - **`UNIQUE(society_id, email)`** — same email can join different societies (not globally unique)
-- **`UserRole` enum** maps directly to `rules.md` roles: `admin`, `committee`, `support_staff`, `member`
+- **`UserRole` enum** maps directly to `CLAUDE.md` roles: `admin`, `committee`, `support_staff`, `member`
 - **Rate limiting** via `slowapi` — default 60 req/min, configurable via `.env`
 - **`alembic upgrade --sql head`** verified — clean DDL output, migration is correct
 - **`CASCADE` delete** on `users.society_id` — deleting a society removes all its users
@@ -1150,9 +1326,279 @@ Reordered remaining phases based on user priority. Maintenance & Payments moved 
 
 ---
 
+---
+
+---
+
+## Session 9 — 2026-03-22
+
+### Phase 9A Complete — Notice Board / Announcements (Full-Stack)
+
+Built the notice board feature end-to-end — backend model/API, admin web portal, and Flutter mobile app.
+
+Also renamed `rules.md` → `CLAUDE.md` and restyled both `CLAUDE.md` and `SESSION_LOG.md` with polished formatting (centered headers, badges, collapsible index, phase status table).
+
+---
+
+### Part 1: Backend — Notice Model & API
+
+#### Database Model: `notices`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| society_id | String(5) FK | Multi-tenant isolation |
+| posted_by_id | UUID FK | Who posted the notice |
+| title | String(255) | Required |
+| body | Text | Required |
+| priority | Enum | normal, important, urgent |
+| is_pinned | Boolean | Default false — pinned notices show first |
+| created_at | DateTime | Auto-managed |
+| updated_at | DateTime | Auto-managed |
+
+#### API Endpoints
+
+| Method | Path | Access | Description |
+|--------|------|--------|-------------|
+| POST | `/api/v1/notices/` | Committee/Admin | Post a new notice |
+| GET | `/api/v1/notices/` | Any authenticated | List notices (pinned first, then newest) |
+| GET | `/api/v1/notices/{id}` | Any authenticated | Get single notice |
+| PATCH | `/api/v1/notices/{id}` | Committee/Admin | Edit notice (title, body, priority, pin) |
+| DELETE | `/api/v1/notices/{id}` | Committee/Admin | Delete a notice |
+
+---
+
+### Part 2: Admin Web Portal
+
+| Page | Route | Features |
+|------|-------|----------|
+| Notice Board | `/notices` | Card list with priority badges, pin/unpin, priority dropdown, delete, filter tabs (all/pinned/normal/important/urgent) |
+| Post Notice | `/notices/new` | Form: title, body, priority dropdown, pin checkbox |
+| Dashboard | `/dashboard` | Added "Active Notices" stat card |
+| Sidebar | — | Added "Notices" nav item with megaphone icon |
+
+---
+
+### Part 3: Flutter Mobile App
+
+| Screen | Route | Features |
+|--------|-------|----------|
+| Notice Board | `/notices` | List with priority badges, pin indicators, tap to view full notice in bottom sheet, pull-to-refresh |
+| Dashboard | `/dashboard` | Added "Notice Board" tile for all users |
+
+---
+
+### Part 4: Housekeeping
+
+- Renamed `rules.md` → `CLAUDE.md` (auto-read by Claude Code every session)
+- Restyled `CLAUDE.md` with centered header, badges, collapsible sections, architecture diagram
+- Added session checklist to `CLAUDE.md`
+- Restyled `SESSION_LOG.md` with phase status table and collapsible session index
+- Updated all references (`SESSION_LOG.md`, `claude_master_plan.txt`, `README.md`) from `rules.md` → `CLAUDE.md`
+
+---
+
+### Files Created / Modified
+
+| File | Action | Description |
+|------|--------|-------------|
+| `rules.md` → `CLAUDE.md` | Renamed + Restyled | Project rules with badges, collapsible sections, session checklist |
+| `SESSION_LOG.md` | Modified | Added phase status table + collapsible session index at top |
+| `README.md` | Modified | Updated reference from `rules.md` to `CLAUDE.md` |
+| `claude_master_plan.txt` | Modified | Updated reference from `rules.md` to `CLAUDE.md` |
+| `backend/app/models/notice.py` | Created | `Notice` model, `NoticePriority` enum |
+| `backend/app/schemas/notice.py` | Created | `NoticeCreate`, `NoticeUpdate`, `NoticeResponse` |
+| `backend/app/crud/crud_notice.py` | Created | Full CRUD: create, list, get, update, delete |
+| `backend/app/api/v1/endpoints/notices.py` | Created | 5 endpoints for notice lifecycle |
+| `backend/app/models/__init__.py` | Modified | Exported `Notice`, `NoticePriority` |
+| `backend/app/db/base.py` | Modified | Registered `Notice` for Alembic |
+| `backend/app/schemas/__init__.py` | Modified | Exported notice schemas |
+| `backend/app/crud/__init__.py` | Modified | Exported notice CRUD functions |
+| `backend/app/api/v1/__init__.py` | Modified | Mounted notices router |
+| `backend/migrations/versions/a8eea61c74a2_create_notices_table.py` | Created | Migration: creates `notices` table with indexes |
+| `web/src/lib/types.ts` | Modified | Added `Notice`, `NoticePriority` interfaces |
+| `web/src/lib/api.ts` | Modified | Added `getNotices`, `createNotice`, `updateNotice`, `deleteNotice` |
+| `web/src/components/sidebar.tsx` | Modified | Added "Notices" nav item with megaphone icon |
+| `web/src/app/(admin)/notices/page.tsx` | Created | Notice board list with filters, pin, priority, delete |
+| `web/src/app/(admin)/notices/new/page.tsx` | Created | Post notice form |
+| `web/src/app/(admin)/dashboard/page.tsx` | Modified | Added "Active Notices" stat card |
+| `frontend/lib/shared/models/notice_model.dart` | Created | `NoticeModel`, `NoticePriority` |
+| `frontend/lib/features/notices/services/notice_service.dart` | Created | Dio calls for notice endpoints |
+| `frontend/lib/features/notices/providers/notice_provider.dart` | Created | `NoticeState` + `NoticeNotifier` (Riverpod) |
+| `frontend/lib/features/notices/screens/notices_list_screen.dart` | Created | Notice list with bottom sheet detail view |
+| `frontend/lib/core/constants/api_constants.dart` | Modified | Added notices endpoint path |
+| `frontend/lib/main.dart` | Modified | Added `/notices` route |
+| `frontend/lib/shared/screens/dashboard_placeholder_screen.dart` | Modified | Added "Notice Board" tile, updated phase numbers |
+
+---
+
+### Key Design Decisions
+
+- **No draft/archive status** — kept it simple: notices are either posted or deleted. Pin + priority covers the use cases.
+- **Pinned notices sort first** — `ORDER BY is_pinned DESC, created_at DESC` in CRUD query
+- **All users see notices** — committee/admin post, everyone reads
+- **Bottom sheet detail view on mobile** — tap a notice card to read the full content without navigating away
+- **`flutter analyze` — zero issues**
+- **`npm run build` — zero errors**
+
+---
+
+### Login Bug Fix: passlib + bcrypt 5.0.0 Incompatibility
+
+**Problem:** `passlib` tries to access `bcrypt.__about__.__version__` which was removed in bcrypt 5.0.0 on Python 3.13. This caused `ValueError` / `AttributeError` on every login attempt.
+
+**Fix:** Replaced `passlib.context.CryptContext` with direct `bcrypt.hashpw()` and `bcrypt.checkpw()` calls. Existing `$2b$12$` password hashes are fully compatible with both libraries.
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/core/security.py` | Modified | Replaced passlib with direct bcrypt for `hash_password()` and `verify_password()` |
+
+---
+
+---
+
+## Session 10 — 2026-03-22
+
+### Phase 9A Enhancement — Notice Images + Mobile Notice Management
+
+**Objective:** Allow committee members to create/manage notices from the mobile app and add optional image attachments to notices across all platforms.
+
+---
+
+### Files Created / Modified
+
+**Backend:**
+
+| File | Action | Description |
+|------|--------|-------------|
+| `backend/app/models/notice.py` | Modified | Added `image_url` nullable column (String 500) |
+| `backend/app/schemas/notice.py` | Modified | Added `image_url` to `NoticeCreate`, `NoticeUpdate`, `NoticeResponse` |
+| `backend/app/crud/crud_notice.py` | Modified | Pass `image_url` through in `create_notice()` |
+| `backend/app/api/v1/endpoints/notices.py` | Modified | Added `POST /notices/upload-image` endpoint, image cleanup on delete |
+| `backend/app/core/config.py` | Modified | Added `UPLOAD_DIR` and `MAX_IMAGE_SIZE_MB` settings |
+| `backend/app/main.py` | Modified | Mounted `/uploads` static file serving via `StaticFiles` |
+| `backend/requirements.txt` | Modified | Added `Pillow>=10.0.0` |
+| `backend/migrations/versions/c109897754d0_add_image_url_to_notices.py` | Created | 8th migration: adds `image_url` column to notices |
+
+**Web Portal:**
+
+| File | Action | Description |
+|------|--------|-------------|
+| `web/src/lib/types.ts` | Modified | Added `image_url` to `Notice` interface |
+| `web/src/lib/api.ts` | Modified | Added `uploadNoticeImage()`, `image_url` in create/update |
+| `web/src/app/(admin)/notices/new/page.tsx` | Modified | Image picker with preview, upload-then-create flow |
+| `web/src/app/(admin)/notices/page.tsx` | Modified | Display notice images in list view |
+
+**Mobile (Flutter):**
+
+| File | Action | Description |
+|------|--------|-------------|
+| `frontend/lib/shared/models/notice_model.dart` | Modified | Added `imageUrl` field |
+| `frontend/lib/features/notices/services/notice_service.dart` | Modified | Added `createNotice()`, `updateNotice()`, `uploadImage()` methods |
+| `frontend/lib/features/notices/providers/notice_provider.dart` | Modified | Added `createNotice()`, `updateNotice()` with image upload support |
+| `frontend/lib/features/notices/screens/notices_list_screen.dart` | Modified | FAB for committee/admin, image thumbnails, delete action in detail sheet |
+| `frontend/lib/features/notices/screens/create_notice_screen.dart` | Created | Full create form: title, body, image picker, priority segments, pin toggle |
+| `frontend/lib/main.dart` | Modified | Added `/notices/new` route + import |
+| `frontend/pubspec.yaml` | Modified | Added `image_picker: ^1.1.2` dependency |
+
+**Other:**
+
+| File | Action | Description |
+|------|--------|-------------|
+| `.gitignore` | Modified | Added `backend/uploads/` to ignore user-generated content |
+
+---
+
+### Key Design Decisions
+
+- **Separate upload endpoint** — `POST /notices/upload-image` returns a URL; create/update endpoints accept `image_url` as a string. Keeps JSON endpoints backward-compatible.
+- **Server-side file storage** — Images saved to `backend/uploads/notices/` with UUID filenames, served via FastAPI `StaticFiles`.
+- **Image validation** — JPEG, PNG, WebP only; max 5MB; configurable via `MAX_IMAGE_SIZE_MB` env var.
+- **Mobile committee/admin actions** — FAB (+) button and delete action only visible when `role == 'admin' || role == 'committee'`.
+- **Image picker quality** — Compressed to 85% quality, max 1920×1920 on mobile to reduce upload size.
+- **`flutter analyze` — zero issues**
+- **`npm run build` — zero errors**
+
+---
+
+---
+
+## Session 11 — 2026-03-22
+
+### Phase 9B Complete — Complaint Comments / Replies
+
+**Objective:** Add threaded comment/reply functionality to complaints across backend, web portal, and mobile app.
+
+---
+
+### RBAC for Comments
+
+| Role | View Comments | Add Comment | Delete Own | Delete Any |
+|------|:---:|:---:|:---:|:---:|
+| **Admin** | All complaints | Any complaint | Yes | Yes |
+| **Committee** | All complaints | Any complaint | Yes | Yes |
+| **Support Staff** | Own complaints | Own complaints | Yes | No |
+| **Member** | Own complaints | Own complaints | Yes | No |
+
+---
+
+### Files Created
+
+| File | Description |
+|------|-------------|
+| `backend/app/models/complaint_comment.py` | `ComplaintComment` SQLAlchemy model (UUID PK, society_id FK, complaint_id FK, user_id FK, body, created_at) |
+| `backend/app/schemas/complaint_comment.py` | `CommentCreate` + `CommentResponse` Pydantic schemas (includes `user_name` from relationship) |
+| `backend/app/crud/crud_complaint_comment.py` | CRUD: `create_comment`, `get_comments`, `get_comment_by_id`, `delete_comment` |
+| `backend/migrations/versions/cae8afabb4b8_create_complaint_comments_table.py` | Migration #9: creates `complaint_comments` table with indexes |
+| `frontend/lib/shared/models/complaint_comment_model.dart` | Flutter comment model with `fromJson` |
+| `frontend/lib/features/complaints/screens/complaint_detail_screen.dart` | Full complaint detail screen with comment thread, input bar, delete support |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `backend/app/models/__init__.py` | Registered `ComplaintComment` model |
+| `backend/app/api/v1/endpoints/complaints.py` | Added 3 comment endpoints: `GET/POST /{id}/comments`, `DELETE /{id}/comments/{cid}`. Removed inline `UserRole` import (now at top). |
+| `web/src/lib/types.ts` | Added `ComplaintComment` interface |
+| `web/src/lib/api.ts` | Added `getComplaintComments`, `addComplaintComment`, `deleteComplaintComment` methods |
+| `web/src/app/(admin)/complaints/page.tsx` | Added expandable `CommentThread` component per complaint card (load, post, delete comments) |
+| `frontend/lib/features/complaints/services/complaint_service.dart` | Added `getComments`, `addComment`, `deleteComment` methods |
+| `frontend/lib/features/complaints/providers/complaint_provider.dart` | Added `CommentState`, `CommentNotifier`, `commentProvider` (family provider keyed by complaint ID) |
+| `frontend/lib/features/complaints/screens/complaints_list_screen.dart` | Made complaint cards tappable → navigates to `ComplaintDetailScreen` |
+
+### API Endpoints Added
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/v1/complaints/{id}/comments` | Any (RBAC-filtered) | List comments on a complaint |
+| `POST` | `/api/v1/complaints/{id}/comments` | Any (RBAC-filtered) | Add comment (body: `{ "body": "..." }`) |
+| `DELETE` | `/api/v1/complaints/{id}/comments/{cid}` | Owner or Committee+ | Delete a comment |
+
+### Bug Fix: Complaint Visibility
+
+**Problem:** Members could only see their own complaints — other members' complaints were hidden. This defeats the purpose of transparency in a society.
+
+**Fix:** Removed the `raised_by_id` filter for members in `get_complaints()` CRUD and removed the 403 access-denied check in `get_complaint()` and comment endpoints. Now all members can see all complaints in their society, view details, and comment on any complaint.
+
+**Files changed:**
+- `backend/app/crud/crud_complaint.py` — removed `requesting_user_id` / `requesting_user_role` params and member-only filter
+- `backend/app/api/v1/endpoints/complaints.py` — removed member 403 checks from `get_complaint`, `list_comments`, `add_comment`
+
+**Permissions that remain restricted:**
+- Status updates → committee/admin only
+- Deleting complaints → committee/admin only
+- Deleting comments → comment owner or committee/admin
+
+### Verification
+
+- **`flutter analyze` — zero issues**
+- **`npm run build` — zero errors**
+
+---
+
 ### Start of Next Session — Pick Up Here
 
-**All bug fixes complete. All phases through 8.5 are done.**
+**Phase 9B (Complaint Comments) is complete. Continue with Phase 9C–F or Phase 10.**
 
 **Before doing anything else:**
 
@@ -1160,7 +1606,7 @@ Reordered remaining phases based on user priority. Maintenance & Payments moved 
    ```bash
    brew services start postgresql@16
    ```
-2. Run migrations (6 total):
+2. Run migrations (9 total):
    ```bash
    cd /Users/masum/Development/Society/backend
    alembic upgrade head
@@ -1176,14 +1622,15 @@ Reordered remaining phases based on user priority. Maintenance & Payments moved 
    ```
 
 **Then continue with:**
-> **Phase 9 — Quality of Life Features (start with 9A: Notice Board)**
+> **Phase 9C–F — Profiles, Directory, Activity Feed, Search**
+> or **Phase 10 — Facility Booking & Polling**
 
 ---
 
 ### Environment Notes
 
 - PostgreSQL 16 via Homebrew, localhost:5432
-- Database `society_db` — 6 migrations applied
+- Database `society_db` — 9 migrations applied
 - Society IDs: 5-letter uppercase codes (e.g. `MKQWZ`)
 - Backend: `uvicorn app.main:app --reload --port 8000`
 - Web portal: `npm run dev` from `web/` → http://localhost:3000

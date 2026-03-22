@@ -15,6 +15,8 @@ import 'features/visitors/screens/log_entry_screen.dart';
 import 'features/visitors/screens/pending_approvals_screen.dart';
 import 'features/visitors/screens/pre_approve_screen.dart';
 import 'features/visitors/screens/staff_dashboard_screen.dart';
+import 'features/notices/screens/create_notice_screen.dart';
+import 'features/notices/screens/notices_list_screen.dart';
 import 'features/visitors/screens/visitors_list_screen.dart';
 import 'shared/screens/dashboard_placeholder_screen.dart';
 
@@ -70,6 +72,15 @@ class SocietyApp extends ConsumerWidget {
         GoRoute(
           path: '/members/new',
           builder: (_, __) => const AddMemberScreen(),
+        ),
+        // Notices
+        GoRoute(
+          path: '/notices',
+          builder: (_, __) => const NoticesListScreen(),
+        ),
+        GoRoute(
+          path: '/notices/new',
+          builder: (_, __) => const CreateNoticeScreen(),
         ),
         // Visitor routes
         GoRoute(

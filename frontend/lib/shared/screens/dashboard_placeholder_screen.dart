@@ -78,6 +78,15 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
+          // Notice Board — live for everyone
+          _ModuleTile(
+            icon: Icons.campaign_outlined,
+            label: 'Notice Board',
+            subtitle: 'Society announcements',
+            color: AppColors.primary,
+            onTap: () => context.push('/notices'),
+          ),
+
           // Complaints tile — live for everyone
           _ModuleTile(
             icon: Icons.report_problem_outlined,
@@ -130,13 +139,6 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
               onTap: () => context.push('/visitors'),
             ),
           const _ModuleTile(
-            icon: Icons.receipt_long_outlined,
-            label: 'Payments & Bills',
-            subtitle: 'Coming in Phase 9',
-            color: AppColors.success,
-            onTap: null,
-          ),
-          const _ModuleTile(
             icon: Icons.meeting_room_outlined,
             label: 'Facility Booking',
             subtitle: 'Coming in Phase 10',
@@ -148,6 +150,13 @@ class DashboardPlaceholderScreen extends ConsumerWidget {
             label: 'Polling & Voting',
             subtitle: 'Coming in Phase 10',
             color: AppColors.primaryLight,
+            onTap: null,
+          ),
+          const _ModuleTile(
+            icon: Icons.receipt_long_outlined,
+            label: 'Payments & Bills',
+            subtitle: 'Coming in Phase 12',
+            color: AppColors.success,
             onTap: null,
           ),
         ],

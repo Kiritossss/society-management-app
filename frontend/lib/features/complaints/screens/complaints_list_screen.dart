@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/complaint_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/complaint_provider.dart';
+import 'complaint_detail_screen.dart';
 
 class ComplaintsListScreen extends ConsumerStatefulWidget {
   const ComplaintsListScreen({super.key});
@@ -97,9 +98,18 @@ class _ComplaintCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ComplaintDetailScreen(complaint: complaint),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -197,6 +207,7 @@ class _ComplaintCard extends ConsumerWidget {
             ],
           ],
         ),
+      ),
       ),
     );
   }

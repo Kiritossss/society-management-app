@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
+import '../../../shared/models/complaint_comment_model.dart';
 import '../../../shared/models/complaint_model.dart';
 
 class ComplaintService {
@@ -49,5 +50,27 @@ class ComplaintService {
 
   Future<void> deleteComplaint(String complaintId) async {
     await _dio.delete('/api/v1/complaints/$complaintId');
+  }
+
+  // ── Comments ─────────────────────────────────────────────────────────────
+
+  Future<List<ComplaintCommentModel>> getComments(String complaintId) async {
+    final response = await _dio.get('/api/v1/complaints/$complaintId/comments');
+    final list = response.data as List<dynamic>;
+    return list
+        .map((e) => ComplaintCommentModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ComplaintCommentModel> addComment(String complaintId, String body) async {
+    final response = await _dio.post(
+      '/api/v1/complaints/$complaintId/comments',
+      data: {'body': body},
+    );
+    return ComplaintCommentModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteComment(String complaintId, String commentId) async {
+    await _dio.delete('/api/v1/complaints/$complaintId/comments/$commentId');
   }
 }

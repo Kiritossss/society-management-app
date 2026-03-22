@@ -1,3 +1,4 @@
+from app.schemas.notice import NoticeCreate, NoticeResponse, NoticeUpdate
 from app.schemas.society import SocietyCreate, SocietyResponse
 from app.schemas.visitor import VisitorLogEntry, VisitorPreApprove, VisitorResponse, VisitorStatusUpdate
 from app.schemas.unit import UnitBulkCreate, UnitCreate, UnitResponse, UnitUpdate
@@ -37,4 +38,7 @@ __all__ = [
     "VisitorLogEntry",
     "VisitorStatusUpdate",
     "VisitorResponse",
+    "NoticeCreate",
+    "NoticeUpdate",
+    "NoticeResponse",
 ]

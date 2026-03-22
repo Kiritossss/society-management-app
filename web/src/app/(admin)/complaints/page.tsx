@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { Complaint } from "@/lib/types";
+import type { Complaint, ComplaintComment } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
   open: "bg-red-100 text-red-700",
@@ -25,6 +25,7 @@ export default function ComplaintsPage() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     api.getComplaints().then(setComplaints).finally(() => setLoading(false));
@@ -44,6 +45,7 @@ export default function ComplaintsPage() {
     try {
       await api.deleteComplaint(id);
       setComplaints((prev) => prev.filter((c) => c.id !== id));
+      if (expandedId === id) setExpandedId(null);
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Delete failed");
     }
@@ -140,10 +142,113 @@ export default function ComplaintsPage() {
                   )}
                 </div>
               </div>
+
+              {/* Comments toggle */}
+              <div className="mt-3 pt-3 border-t border-border">
+                <button
+                  onClick={() =>
+                    setExpandedId(expandedId === c.id ? null : c.id)
+                  }
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {expandedId === c.id ? "Hide Comments" : "View Comments"}
+                </button>
+                {expandedId === c.id && <CommentThread complaintId={c.id} />}
+              </div>
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function CommentThread({ complaintId }: { complaintId: string }) {
+  const [comments, setComments] = useState<ComplaintComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    api
+      .getComplaintComments(complaintId)
+      .then(setComments)
+      .finally(() => setLoading(false));
+  }, [complaintId]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!body.trim()) return;
+    setSending(true);
+    try {
+      const comment = await api.addComplaintComment(complaintId, body.trim());
+      setComments((prev) => [...prev, comment]);
+      setBody("");
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to add comment");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    try {
+      await api.deleteComplaintComment(complaintId, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to delete comment");
+    }
+  }
+
+  if (loading) {
+    return <p className="text-xs text-muted mt-2">Loading comments...</p>;
+  }
+
+  return (
+    <div className="mt-3 space-y-3">
+      {comments.length === 0 && (
+        <p className="text-xs text-muted">No comments yet.</p>
+      )}
+      {comments.map((c) => (
+        <div key={c.id} className="flex gap-2 group">
+          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
+            {c.user_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium">{c.user_name}</span>
+              <span className="text-xs text-muted">
+                {new Date(c.created_at).toLocaleString()}
+              </span>
+              <button
+                onClick={() => handleDeleteComment(c.id)}
+                className="text-xs text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Delete
+              </button>
+            </div>
+            <p className="text-sm mt-0.5 whitespace-pre-wrap">{c.body}</p>
+          </div>
+        </div>
+      ))}
+
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          type="text"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Write a comment..."
+          maxLength={2000}
+          className="flex-1 text-sm border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        <button
+          type="submit"
+          disabled={sending || !body.trim()}
+          className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          {sending ? "..." : "Send"}
+        </button>
+      </form>
     </div>
   );
 }

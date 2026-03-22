@@ -176,6 +176,43 @@ export const api = {
     return request<void>(`/api/v1/visitors/${id}`, { method: "DELETE" });
   },
 
+  // Notices
+  getNotices(skip = 0, limit = 100) {
+    return request<import("./types").Notice[]>(
+      `/api/v1/notices/?skip=${skip}&limit=${limit}`
+    );
+  },
+  createNotice(data: {
+    title: string;
+    body: string;
+    priority?: string;
+    is_pinned?: boolean;
+    image_url?: string;
+  }) {
+    return request<import("./types").Notice>("/api/v1/notices/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  uploadNoticeImage(file: File) {
+    return uploadFile<{ image_url: string }>("/api/v1/notices/upload-image", file);
+  },
+  updateNotice(id: string, data: {
+    title?: string;
+    body?: string;
+    priority?: string;
+    is_pinned?: boolean;
+    image_url?: string | null;
+  }) {
+    return request<import("./types").Notice>(
+      `/api/v1/notices/${id}`,
+      { method: "PATCH", body: JSON.stringify(data) }
+    );
+  },
+  deleteNotice(id: string) {
+    return request<void>(`/api/v1/notices/${id}`, { method: "DELETE" });
+  },
+
   // Complaints
   getComplaints(skip = 0, limit = 100) {
     return request<import("./types").Complaint[]>(
@@ -190,6 +227,23 @@ export const api = {
   },
   deleteComplaint(id: string) {
     return request<void>(`/api/v1/complaints/${id}`, { method: "DELETE" });
+  },
+  getComplaintComments(complaintId: string) {
+    return request<import("./types").ComplaintComment[]>(
+      `/api/v1/complaints/${complaintId}/comments`
+    );
+  },
+  addComplaintComment(complaintId: string, body: string) {
+    return request<import("./types").ComplaintComment>(
+      `/api/v1/complaints/${complaintId}/comments`,
+      { method: "POST", body: JSON.stringify({ body }) }
+    );
+  },
+  deleteComplaintComment(complaintId: string, commentId: string) {
+    return request<void>(
+      `/api/v1/complaints/${complaintId}/comments/${commentId}`,
+      { method: "DELETE" }
+    );
   },
 };
 

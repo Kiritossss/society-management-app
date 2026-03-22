@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.complaint import Complaint, ComplaintStatus
-from app.models.user import UserRole
 from app.schemas.complaint import ComplaintCreate, ComplaintStatusUpdate
 
 
@@ -31,19 +30,14 @@ def create_complaint(
 def get_complaints(
     db: Session,
     society_id: str,
-    requesting_user_id: uuid.UUID,
-    requesting_user_role: UserRole,
     skip: int = 0,
     limit: int = 50,
 ) -> list[Complaint]:
-    """Committee/Admin see all complaints; members see only their own."""
-    query = db.query(Complaint).filter(Complaint.society_id == society_id)
-
-    if requesting_user_role == UserRole.MEMBER:
-        query = query.filter(Complaint.raised_by_id == requesting_user_id)
-
+    """All society members can see all complaints — transparency by design."""
     return (
-        query.order_by(Complaint.created_at.desc())
+        db.query(Complaint)
+        .filter(Complaint.society_id == society_id)
+        .order_by(Complaint.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
